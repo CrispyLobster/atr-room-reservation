@@ -1,0 +1,101 @@
+.detail-card {
+	width: 100%;
+	padding: 30rpx;
+}
+
+.detail-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 30rpx;
+	padding-bottom: 20rpx;
+	border-bottom: 1rpx solid #eeeeee;
+}
+
+.detail-section {
+	margin-bottom: 30rpx;
+}
+
+.section-title {
+	font-size: 16px;
+	font-weight: bold;
+	margin-bottom: 15rpx;
+	color: #333333;
+}
+
+.detail-item {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 15rpx;
+	font-size: 14px;
+}
+
+.item-label {
+	color: #666666;
+	width: 25%;
+}
+
+.item-value {
+	color: #333333;
+	width: 75%;
+	text-align: right;
+}
+
+.status-tag {
+	display: inline-block;
+	padding: 6rpx 16rpx;
+	border-radius: 4rpx;
+	font-size: 12px;
+}
+
+.status-pending {
+	background-color: rgba(255, 140, 0, 0.1);
+	color: #ff8c00;
+}
+
+.status-completed {
+	background-color: rgba(76, 175, 80, 0.1);
+	color: #4caf50;
+}
+
+.status-canceled {
+	background-color: rgba(244, 67, 54, 0.1);
+	color: #f44336;
+}
+
+.detail-actions {
+	margin-top: 40rpx;
+	display: flex;
+	justify-content: center;
+}
+
+.btn-cancel {
+	width: 80%;
+	height: 80rpx;
+	line-height: 80rpx;
+	color: #ffffff;
+	background-color: #f44336;
+	border-radius: 5rpx;
+	font-size: 16px;
+}
+
+.no-data {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 400rpx;
+	color: #999999;
+	font-size: 14px;
+}
+
+.btn-back {
+	width: 200rpx;
+	height: 70rpx;
+	line-height: 70rpx;
+	background-color: #3a5fcd;
+	color: #ffffff;
+	border-radius: 35rpx;
+	font-size: 14px;
+	margin-top: 30rpx;
+}

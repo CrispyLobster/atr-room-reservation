@@ -1,0 +1,42 @@
+<view class="container">
+     <!-- 日期选择器 -->
+     <view class="date-picker card">
+          <scroll-view scroll-x="true" class="date-scroll">
+               <view class="date-tabs">
+                    <view wx:for="{{dateList}}" wx:key="date" class="date-tab {{selectedDate === item.date ? 'active' : ''}}" bindtap="switchDate" data-date="{{item.date}}">
+                         <text class="day">{{item.day}}</text>
+                         <text class="date">{{item.dateText}}</text>
+                    </view>
+               </view>
+          </scroll-view>
+     </view>
+     <!-- 预约次数提示 -->
+     <view class="appointment-count-container">
+          <view class="appointment-count">
+               <text class="count-label">已预约</text>
+               <text class="count-number">{{appointmentCount}}</text>
+          </view>
+     </view>
+     <!-- 时间段列表 -->
+     <view class="time-slots">
+          <view class="sub-title">可选时间段</view>
+          <block wx:if="{{timeSlots.length > 0}}">
+               <view wx:for="{{timeSlots}}" wx:key="id" class="time-slot {{item.isBooked ? (item.isPast ? 'time-slot-past' : 'time-slot-booked') : 'time-slot-available'}}">
+                    <view class="time-info">
+                         <text class="time-range">{{item.startTime}} - {{item.endTime}}</text>
+                         <text class="time-status">
+                              {{item.isPast ? '时间已过' : (item.isBooked ? '已被预约' : '可预约')}}
+                         </text>
+                    </view>
+                    <block wx:if="{{!item.isBooked}}">
+                         <button class="btn-book" bindtap="goToReservation" data-time-id="{{item.id}}">
+                              预约
+                         </button>
+                    </block>
+               </view>
+          </block>
+          <view wx:else class="no-slots">
+               <text>当前日期没有可用的时间段</text>
+          </view>
+     </view>
+</view>

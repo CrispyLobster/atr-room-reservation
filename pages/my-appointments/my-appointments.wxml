@@ -1,0 +1,33 @@
+<view class="container">
+     <view class="my-appointments">
+          <view class="title">我的预约</view>
+          <block wx:if="{{appointments.length > 0}}">
+               <view wx:for="{{appointments}}" wx:key="id" class="appointment-item card" bindtap="goToDetail" data-id="{{item.id}}">
+                    <view class="appointment-info">
+                         <view class="appointment-time">
+                              <text class="appointment-date">{{item.date}}</text>
+                              <text class="appointment-time-range">
+                                   {{item.startTime}} - {{item.endTime}}
+                              </text>
+                         </view>
+                         <view class="appointment-status">
+                              <text class="status-tag status-{{item.status}}">
+                                   {{statusText[item.status]}}
+                              </text>
+                         </view>
+                    </view>
+                    <view class="operation">
+                         <block wx:if="{{item.status === 'pending'}}">
+                              <button class="btn-cancel-appointment" catchtap="cancelAppointment" data-id="{{item.id}}">
+                                   取消预约
+                              </button>
+                         </block>
+                    </view>
+               </view>
+          </block>
+          <view wx:else class="no-appointments">
+               <text>您暂无预约记录</text>
+               <button class="btn-to-book" bindtap="goToIndex">去预约</button>
+          </view>
+     </view>
+</view>

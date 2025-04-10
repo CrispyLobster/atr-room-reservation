@@ -1,0 +1,102 @@
+.container {
+	padding: 20rpx;
+	box-sizing: border-box;
+}
+
+.my-appointments {
+	width: 100%;
+}
+
+.title {
+	font-size: 18px;
+	font-weight: bold;
+	margin: 20rpx 0;
+}
+
+.appointment-item {
+	background-color: #ffffff;
+	border-radius: 10rpx;
+	padding: 20rpx;
+	margin-bottom: 20rpx;
+	box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.05);
+}
+
+.appointment-info {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20rpx;
+}
+
+.appointment-time {
+	display: flex;
+	flex-direction: column;
+}
+
+.appointment-date {
+	font-size: 16px;
+	color: #333333;
+	margin-bottom: 10rpx;
+}
+
+.appointment-time-range {
+	font-size: 14px;
+	color: #666666;
+}
+
+.status-tag {
+	display: inline-block;
+	padding: 6rpx 16rpx;
+	border-radius: 4rpx;
+	font-size: 12px;
+}
+
+.status-pending {
+	background-color: rgba(255, 140, 0, 0.1);
+	color: #ff8c00;
+}
+
+.status-completed {
+	background-color: rgba(76, 175, 80, 0.1);
+	color: #4caf50;
+}
+
+.status-canceled {
+	background-color: rgba(244, 67, 54, 0.1);
+	color: #f44336;
+}
+
+.operation {
+	display: flex;
+	justify-content: flex-end;
+}
+
+.btn-cancel-appointment {
+	background-color: #ffffff;
+	color: #f44336;
+	border: 1rpx solid #f44336;
+	border-radius: 5rpx;
+	padding: 10rpx 20rpx;
+	font-size: 14px;
+	line-height: 1.5;
+	margin: 0;
+}
+
+.no-appointments {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 300rpx;
+	color: #999999;
+	font-size: 14px;
+}
+
+.btn-to-book {
+	background-color: #3a5fcd;
+	color: #ffffff;
+	border-radius: 5rpx;
+	padding: 10rpx 30rpx;
+	font-size: 14px;
+	margin-top: 30rpx;
+}

@@ -1,0 +1,170 @@
+.date-picker {
+	width: 100%;
+	margin-bottom: 30rpx;
+	overflow: hidden;
+}
+
+.date-scroll {
+	width: 100%;
+	white-space: nowrap;
+}
+
+.date-tabs {
+	display: flex;
+	width: 100%;
+}
+
+.date-tab {
+	flex: 0 0 25%; /* 调整为25%以适应更多日期 */
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 20rpx 0;
+	border-bottom: 4rpx solid transparent;
+}
+
+.date-tab.active {
+	border-bottom: 4rpx solid #3a5fcd;
+}
+
+.date-tab .day {
+	font-size: 14px;
+	color: #666666;
+	margin-bottom: 10rpx;
+}
+
+.date-tab.active .day,
+.date-tab.active .date {
+	color: #3a5fcd;
+	font-weight: bold;
+}
+
+.date-tab .date {
+	font-size: 16px;
+	color: #333333;
+}
+
+/* 预约次数提示样式 */
+.appointment-count-container {
+	width: 100%;
+	margin-bottom: 20rpx;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+}
+
+.appointment-count {
+	font-size: 14px;
+	color: #666666;
+	display: flex;
+	align-items: center;
+	white-space: nowrap;
+}
+
+.count-label {
+	margin-right: 5rpx;
+}
+
+.count-separator {
+	margin: 0 5rpx;
+}
+
+.count-number {
+	font-weight: bold;
+	color: #3a5fcd;
+}
+
+.count-warning {
+	color: #f44336;
+}
+
+.appointment-limit-tip {
+	font-size: 12px;
+	color: #f44336;
+	margin-top: 5rpx;
+}
+
+.time-slots {
+	width: 100%;
+}
+
+.sub-title {
+	font-size: 16px;
+	font-weight: bold;
+	margin: 20rpx 0;
+}
+
+.time-slot {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 30rpx 20rpx;
+	margin-bottom: 20rpx;
+	border-radius: 8rpx;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.time-slot-available {
+	background-color: #ffffff;
+	border: 1rpx solid #dddddd;
+}
+
+.time-slot-booked {
+	background-color: #f0f0f0;
+	color: #999999;
+}
+
+.time-slot-past {
+	background-color: #f0f0f0;
+	color: #999999;
+	border-left: 4rpx solid #f44336;
+}
+
+.time-info {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	overflow: hidden;
+}
+
+.time-range {
+	font-size: 16px;
+	color: #333333;
+	margin-bottom: 8rpx;
+}
+
+.time-status {
+	font-size: 12px;
+	color: #999999;
+}
+
+.time-slot-booked .time-range,
+.time-slot-booked .time-status,
+.time-slot-past .time-range,
+.time-slot-past .time-status {
+	color: #999999;
+}
+
+.btn-book {
+	width: 160rpx;
+	height: 70rpx;
+	line-height: 70rpx;
+	background-color: #3a5fcd;
+	color: #ffffff;
+	font-size: 14px;
+	text-align: center;
+	border-radius: 35rpx;
+	padding: 0;
+	flex-shrink: 0;
+	margin-left: 10rpx;
+}
+
+.no-slots {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 200rpx;
+	color: #999999;
+	font-size: 14px;
+}

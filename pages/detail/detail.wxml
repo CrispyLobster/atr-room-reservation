@@ -1,0 +1,59 @@
+<view class="container">
+  <view class="card detail-card">
+    <view wx:if="{{appointment}}">
+      <view class="detail-header">
+        <view class="title">预约详情</view>
+        <view class="status-tag status-{{appointment.status}}">{{statusText[appointment.status]}}</view>
+      </view>
+      
+      <view class="detail-section">
+        <view class="section-title">面试室信息</view>
+        <view class="detail-item">
+          <text class="item-label">预约日期</text>
+          <text class="item-value">{{appointment.date}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="item-label">预约时间</text>
+          <text class="item-value">{{appointment.startTime}} - {{appointment.endTime}}</text>
+        </view>
+      </view>
+      
+      <view class="detail-section">
+        <view class="section-title">预约人信息</view>
+        <view class="detail-item">
+          <text class="item-label">姓名</text>
+          <text class="item-value">{{appointment.name}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="item-label">学号</text>
+          <text class="item-value">{{appointment.studentId}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="item-label">手机号码</text>
+          <text class="item-value">{{appointment.phone}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="item-label">用途</text>
+          <text class="item-value">{{appointment.purpose}}</text>
+        </view>
+      </view>
+      
+      <view class="detail-section">
+        <view class="section-title">其他信息</view>
+        <view class="detail-item">
+          <text class="item-label">预约时间</text>
+          <text class="item-value">{{formatCreateTime}}</text>
+        </view>
+      </view>
+      
+      <view wx:if="{{appointment.status === 'pending'}}" class="detail-actions">
+        <button class="btn-cancel" bindtap="cancelAppointment">取消预约</button>
+      </view>
+    </view>
+    
+    <view wx:else class="no-data">
+      <text>未找到预约信息</text>
+      <button class="btn-back" bindtap="goBack">返回</button>
+    </view>
+  </view>
+</view> 

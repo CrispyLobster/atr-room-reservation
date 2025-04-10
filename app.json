@@ -1,0 +1,36 @@
+{
+	"pages": [
+		"pages/login/login",
+		"pages/index/index",
+		"pages/userinfo/userinfo",
+		"pages/reservation/reservation",
+		"pages/user/user",
+		"pages/detail/detail",
+		"pages/my-appointments/my-appointments",
+		"pages/settings/settings"
+	],
+	"window": {
+		"backgroundTextStyle": "light",
+		"navigationBarBackgroundColor": "#3A5FCD",
+		"navigationBarTitleText": "面试室预约助手",
+		"navigationBarTextStyle": "white"
+	},
+	"tabBar": {
+		"color": "#666666",
+		"selectedColor": "#3A5FCD",
+		"backgroundColor": "#ffffff",
+		"borderStyle": "black",
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"text": "预约日历"
+			},
+			{
+				"pagePath": "pages/user/user",
+				"text": "个人中心"
+			}
+		]
+	},
+	"style": "v2",
+	"sitemapLocation": "sitemap.json"
+}

@@ -1,0 +1,7 @@
+{
+  "desc": "小程序的sitemap.json文件",
+  "rules": [{
+    "action": "allow",
+    "page": "*"
+  }]
+} 

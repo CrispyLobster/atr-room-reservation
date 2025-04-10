@@ -1,0 +1,20 @@
+<view class="container">
+     <view class="title">设置</view>
+     <view class="settings-list">
+          <view class="settings-item" bindtap="clearCache">
+               <text class="settings-text">清除缓存</text>
+               <view class="arrow"></view>
+          </view>
+          <view class="settings-item" bindtap="showAbout">
+               <text class="settings-text">关于我们</text>
+               <view class="arrow"></view>
+          </view>
+          <view class="settings-item" bindtap="contactUs">
+               <text class="settings-text">联系我们</text>
+               <view class="arrow"></view>
+          </view>
+     </view>
+     <view class="version-info">
+          <text class="version-text">版本: 1.0.0</text>
+     </view>
+</view>

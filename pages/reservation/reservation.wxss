@@ -1,0 +1,99 @@
+.form-card {
+	width: 100%;
+	padding: 30rpx;
+	box-sizing: border-box;
+}
+
+.reservation-header {
+	margin-bottom: 40rpx;
+}
+
+.reservation-time {
+	display: flex;
+	flex-direction: column;
+	margin-top: 20rpx;
+}
+
+.date {
+	font-size: 16px;
+	color: #333333;
+	margin-bottom: 10rpx;
+}
+
+.time {
+	font-size: 18px;
+	color: #3a5fcd;
+	font-weight: bold;
+}
+
+.form-content {
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.form-group {
+	margin-bottom: 30rpx;
+	width: 100%;
+}
+
+.form-label {
+	font-size: 14px;
+	color: #333333;
+	margin-bottom: 10rpx;
+	display: block;
+}
+
+.required {
+	color: #f44336;
+}
+
+.form-input {
+	width: 100%;
+	height: 80rpx;
+	background-color: #ffffff;
+	border: 1rpx solid #dddddd;
+	border-radius: 5rpx;
+	padding: 0 20rpx;
+	box-sizing: border-box;
+	font-size: 14px;
+}
+
+.form-textarea {
+	width: 100%;
+	height: 200rpx;
+	background-color: #ffffff;
+	border: 1rpx solid #dddddd;
+	border-radius: 5rpx;
+	padding: 20rpx;
+	box-sizing: border-box;
+	font-size: 14px;
+}
+
+.form-buttons {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 50rpx;
+	width: 100%;
+}
+
+.btn-cancel,
+.btn-submit {
+	width: 45%;
+	height: 80rpx;
+	line-height: 80rpx;
+	text-align: center;
+	border-radius: 5rpx;
+	font-size: 16px;
+	box-sizing: border-box;
+}
+
+.btn-cancel {
+	background-color: #f5f5f5;
+	color: #666666;
+	border: 1rpx solid #dddddd;
+}
+
+.btn-submit {
+	background-color: #3a5fcd;
+	color: #ffffff;
+}
