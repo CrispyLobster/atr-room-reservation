@@ -6,14 +6,16 @@
                     <view class="appointment-info">
                          <view class="appointment-time">
                               <text class="appointment-date">{{item.date}}</text>
-                              <text class="appointment-time-range">
+                              <!-- prettier-ignore -->
+                              <view class="appointment-time-range">
                                    {{item.startTime}} - {{item.endTime}}
-                              </text>
+                              </view>
                          </view>
                          <view class="appointment-status">
-                              <text class="status-tag status-{{item.status}}">
+                              <!-- prettier-ignore -->
+                              <view class="status-tag status-{{item.status}}">
                                    {{statusText[item.status]}}
-                              </text>
+                              </view>
                          </view>
                     </view>
                     <view class="operation">
