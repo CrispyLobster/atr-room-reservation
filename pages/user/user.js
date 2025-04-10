@@ -19,22 +19,121 @@ Page({
 	},
 
 	onShow: function () {
-		// 每次显示页面时更新用户信息
-		const userInfo = app.globalData.userInfo || {}
-		const userProfile = wx.getStorageSync('userProfile') || {}
+		// 每次显示页面时从云数据库获取最新用户信息
+		this.fetchUserInfo()
+	},
 
-		// 合并用户信息，确保显示用户的姓名
-		const updatedUserInfo = {
-			...userInfo,
-			...userProfile,
-		}
-
-		this.setData({
-			userInfo: updatedUserInfo,
+	// 从数据库获取最新用户信息
+	fetchUserInfo: function () {
+		wx.showLoading({
+			title: '加载中',
 		})
 
-		// 不再每次自动刷新预约数据
-		// this.loadAppointments()
+		// 通过云函数获取用户openid
+		wx.cloud.callFunction({
+			name: 'login',
+			success: res => {
+				const openid = res.result.openid
+				const db = wx.cloud.database()
+
+				// 查询最新的用户信息
+				db.collection('users')
+					.doc(openid)
+					.get()
+					.then(res => {
+						wx.hideLoading()
+						if (res.data) {
+							// 更新全局用户信息
+							app.globalData.userInfo = res.data
+							app.globalData.hasLogin = true
+
+							// 更新页面数据
+							this.setData({
+								userInfo: res.data,
+							})
+						} else {
+							wx.hideLoading()
+							console.log('未找到用户信息')
+						}
+					})
+					.catch(err => {
+						wx.hideLoading()
+						console.error('获取用户信息失败', err)
+					})
+			},
+			fail: err => {
+				wx.hideLoading()
+				console.error('云函数调用失败', err)
+			},
+		})
+	},
+
+	// 选择头像
+	onChooseAvatar(e) {
+		console.log('用户选择了头像：', e.detail)
+		const { avatarUrl } = e.detail
+
+		// 显示加载中
+		wx.showLoading({
+			title: '保存中',
+		})
+
+		// 获取数据库和当前用户ID
+		const db = wx.cloud.database()
+
+		wx.cloud.callFunction({
+			name: 'login',
+			success: res => {
+				const openid = res.result.openid
+
+				// 更新头像到数据库
+				db.collection('users')
+					.doc(openid)
+					.update({
+						data: {
+							avatarUrl: avatarUrl,
+							updatedAt: db.serverDate(),
+						},
+					})
+					.then(res => {
+						wx.hideLoading()
+						console.log('更新头像成功', res)
+
+						// 更新全局用户信息
+						if (app.globalData.userInfo) {
+							app.globalData.userInfo.avatarUrl = avatarUrl
+						}
+
+						// 更新当前页面显示
+						this.setData({
+							'userInfo.avatarUrl': avatarUrl,
+						})
+
+						// 显示成功提示
+						wx.showToast({
+							title: '头像更新成功',
+							icon: 'success',
+							duration: 1500,
+						})
+					})
+					.catch(err => {
+						wx.hideLoading()
+						console.error('更新头像失败', err)
+						wx.showToast({
+							title: '保存失败，请重试',
+							icon: 'none',
+						})
+					})
+			},
+			fail: err => {
+				wx.hideLoading()
+				console.error('获取用户openid失败', err)
+				wx.showToast({
+					title: '网络错误，请重试',
+					icon: 'none',
+				})
+			},
+		})
 	},
 
 	// 加载预约列表

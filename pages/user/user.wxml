@@ -2,10 +2,13 @@
      <!-- 用户信息卡片 -->
      <view class="user-card">
           <view class="user-info">
-               <view class="avatar-placeholder">
-                    {{userInfo.name ? userInfo.name.substr(0,1) : (userInfo.nickName ? userInfo.nickName.substr(0,1) : '访')}}
-               </view>
-               <view class="user-name">{{userInfo.name || userInfo.nickName || '访客用户'}}</view>
+               <button class="avatar-wrapper" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+                    <image wx:if="{{userInfo.avatarUrl}}" src="{{userInfo.avatarUrl}}" mode="aspectFill" class="avatar-image"></image>
+                    <text wx:else class="avatar-text">
+                         {{userInfo.realName ? userInfo.realName.substr(0,1) : (userInfo.nickName ? userInfo.nickName.substr(0,1) : '访')}}
+                    </text>
+               </button>
+               <view class="user-name">{{userInfo.realName || userInfo.nickName || '访客用户'}}</view>
           </view>
      </view>
      <!-- 功能列表 -->
