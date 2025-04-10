@@ -2,7 +2,7 @@
      <view class="my-appointments">
           <view class="title">我的预约</view>
           <block wx:if="{{appointments.length > 0}}">
-               <view wx:for="{{appointments}}" wx:key="id" class="appointment-item card" bindtap="goToDetail" data-id="{{item.id}}">
+               <view wx:for="{{appointments}}" wx:key="_id" class="appointment-item card" bindtap="goToDetail" data-id="{{item._id}}">
                     <view class="appointment-info">
                          <view class="appointment-time">
                               <text class="appointment-date">{{item.date}}</text>
@@ -18,7 +18,7 @@
                     </view>
                     <view class="operation">
                          <block wx:if="{{item.status === 'pending'}}">
-                              <button class="btn-cancel-appointment" catchtap="cancelAppointment" data-id="{{item.id}}">
+                              <button class="btn-cancel-appointment" catchtap="cancelAppointment" data-id="{{item._id}}">
                                    取消预约
                               </button>
                          </block>

@@ -27,7 +27,7 @@ function getNextSevenDays() {
 }
 
 // 生成时间段列表
-function generateTimeSlots(date) {
+function generateTimeSlots(date, bookedSlots) {
 	// 从早上8点到晚上9点，每小时一个时间段
 	const timeSlots = []
 	for (let hour = 8; hour < 21; hour++) {
@@ -51,9 +51,6 @@ function generateTimeSlots(date) {
 	const currentHour = now.getHours()
 	const currentMinute = now.getMinutes()
 
-	// 从全局获取预约数据
-	const appointments = app.globalData.appointments || wx.getStorageSync('appointments') || []
-
 	// 遍历时间段进行处理
 	timeSlots.forEach(slot => {
 		// 解析开始时间
@@ -74,26 +71,16 @@ function generateTimeSlots(date) {
 		}
 
 		// 条件2：检查是否已被预约
-		appointments.forEach(appointment => {
-			// 只处理当前显示日期的预约，且状态不是已取消的
-			if (
-				appointment.date === date &&
-				appointment.timeId === slot.id &&
-				appointment.status !== 'canceled'
-			) {
-				slot.isBooked = true
-			}
-		})
+		if (bookedSlots && bookedSlots.length > 0) {
+			bookedSlots.forEach(bookedSlot => {
+				if (String(bookedSlot.timeId) === String(slot.id)) {
+					slot.isBooked = true
+				}
+			})
+		}
 	})
 
 	return timeSlots
-}
-
-// 检查用户预约次数
-function checkUserAppointmentCount() {
-	const appointments = app.globalData.appointments || wx.getStorageSync('appointments') || []
-	const userAppointments = appointments.filter(appointment => appointment.status !== 'canceled')
-	return userAppointments.length
 }
 
 Page({
@@ -121,10 +108,7 @@ Page({
 		}
 
 		// 更新用户预约次数
-		const appointmentCount = checkUserAppointmentCount()
-		this.setData({
-			appointmentCount,
-		})
+		this.loadAppointmentCount()
 	},
 
 	// 下拉刷新
@@ -132,12 +116,32 @@ Page({
 		this.loadTimeSlots(this.data.selectedDate)
 
 		// 更新用户预约次数
-		const appointmentCount = checkUserAppointmentCount()
-		this.setData({
-			appointmentCount,
-		})
+		this.loadAppointmentCount()
 
 		wx.stopPullDownRefresh()
+	},
+
+	// 加载用户预约数量
+	loadAppointmentCount: function() {
+		wx.cloud.callFunction({
+			name: 'login',
+			success: res => {
+				const openid = res.result.openid
+				const db = wx.cloud.database()
+				
+				db.collection('room_reservation')
+					.where({
+						userId: openid,
+						status: 'pending'
+					})
+					.count()
+					.then(res => {
+						this.setData({
+							appointmentCount: res.total
+						})
+					})
+			}
+		})
 	},
 
 	// 切换选择的日期
@@ -153,13 +157,41 @@ Page({
 	// 加载时间段列表
 	loadTimeSlots: function (date) {
 		console.log('加载时间段数据，日期:', date)
-
-		// 获取时间段数据
-		const timeSlots = generateTimeSlots(date)
-
-		this.setData({
-			timeSlots,
+		wx.showLoading({
+			title: '加载中',
 		})
+		
+		const db = wx.cloud.database()
+		
+		// 查询当天已预约的时间段
+		db.collection('room_reservation')
+			.where({
+				date: date,
+				status: 'pending'  // 只考虑未取消的预约
+			})
+			.field({
+				timeId: true
+			})
+			.get()
+			.then(res => {
+				wx.hideLoading()
+				// 生成时间段列表
+				const timeSlots = generateTimeSlots(date, res.data)
+				
+				this.setData({
+					timeSlots,
+				})
+			})
+			.catch(err => {
+				wx.hideLoading()
+				console.error('获取预约时间段失败', err)
+				// 生成时间段列表(空预约)
+				const timeSlots = generateTimeSlots(date, [])
+				
+				this.setData({
+					timeSlots,
+				})
+			})
 	},
 
 	// 跳转到预约表单页

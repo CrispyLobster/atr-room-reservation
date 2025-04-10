@@ -22,21 +22,44 @@ Page({
 
 	// 加载预约列表
 	loadAppointments: function () {
-		// 获取预约数据（实际应用中应该从服务器获取）
-		const appointments = app.globalData.appointments || wx.getStorageSync('appointments') || []
-
-		// 按日期和时间倒序排序，最新的在前面
-		appointments.sort((a, b) => {
-			// 先按日期比较
-			if (a.date !== b.date) {
-				return a.date < b.date ? 1 : -1
-			}
-			// 日期相同按开始时间比较
-			return a.startTime < b.startTime ? 1 : -1
+		wx.showLoading({
+			title: '加载中',
 		})
 
-		this.setData({
-			appointments,
+		// 从云数据库获取预约数据
+		wx.cloud.callFunction({
+			name: 'login',
+			success: res => {
+				const openid = res.result.openid
+				const db = wx.cloud.database()
+
+				// 查询当前用户的所有预约
+				db.collection('room_reservation')
+					.where({
+						userId: openid,
+					})
+					.orderBy('date', 'desc') // 按日期降序排序
+					.orderBy('startTime', 'desc') // 同一天按开始时间降序排序
+					.get()
+					.then(res => {
+						wx.hideLoading()
+						this.setData({
+							appointments: res.data || [],
+						})
+					})
+					.catch(err => {
+						wx.hideLoading()
+						console.error('获取预约列表失败', err)
+						wx.showToast({
+							title: '加载失败',
+							icon: 'none',
+						})
+					})
+			},
+			fail: err => {
+				wx.hideLoading()
+				console.error('调用云函数失败', err)
+			},
 		})
 	},
 
@@ -72,28 +95,50 @@ Page({
 
 	// 执行取消预约
 	doCancelAppointment: function (id) {
-		// 获取所有预约
-		let appointments = app.globalData.appointments || []
+		wx.showLoading({
+			title: '处理中',
+		})
 
-		// 找到要取消的预约
-		const index = appointments.findIndex(item => item.id == id)
+		const db = wx.cloud.database()
 
-		if (index !== -1) {
-			// 更新状态为已取消
-			appointments[index].status = 'canceled'
-			app.globalData.appointments = appointments
-
-			// 保存到本地存储
-			wx.setStorageSync('appointments', appointments)
-
-			// 刷新列表
-			this.loadAppointments()
-
-			// 显示取消成功提示
+		// 检查ID是否存在
+		if (!id) {
+			wx.hideLoading()
 			wx.showToast({
-				title: '预约已取消',
-				icon: 'success',
+				title: '参数错误',
+				icon: 'none',
 			})
+			return
 		}
+
+		console.log('取消预约ID:', id)
+
+		// 更新预约状态为已取消
+		db.collection('room_reservation')
+			.doc(id)
+			.update({
+				data: {
+					status: 'canceled',
+					updatedAt: db.serverDate(),
+				},
+			})
+			.then(res => {
+				wx.hideLoading()
+				wx.showToast({
+					title: '预约已取消',
+					icon: 'success',
+				})
+
+				// 刷新列表
+				this.loadAppointments()
+			})
+			.catch(err => {
+				wx.hideLoading()
+				console.error('取消预约失败', err)
+				wx.showToast({
+					title: '操作失败',
+					icon: 'none',
+				})
+			})
 	},
 })

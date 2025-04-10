@@ -11,7 +11,7 @@
                               <text>姓名</text>
                               <text class="required">*</text>
                          </view>
-                         <input class="form-input" name="name" placeholder="请输入姓名" value="{{userInfo.name}}" />
+                         <input class="form-input" name="realName" placeholder="请输入姓名" value="{{userInfo.realName}}" />
                     </view>
                     <view class="form-group">
                          <view class="form-label">

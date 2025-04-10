@@ -29,19 +29,36 @@ Page({
 		this.loadUserInfo()
 	},
 
-	// 从本地存储和全局数据中加载用户信息
+	// 从数据库加载用户信息
 	loadUserInfo: function () {
-		// 从app.globalData获取用户信息
-		const userInfo = app.globalData.userInfo
-
-		// 从本地存储获取用户配置信息
-		const userProfile = wx.getStorageSync('userProfile')
-
-		if (userInfo || userProfile) {
+		if (app.globalData.userInfo) {
 			this.setData({
-				'formData.name': userProfile?.name || userInfo?.nickName || '',
-				'formData.phone': userProfile?.phone || userInfo?.phone || '',
-				'formData.studentId': userProfile?.studentId || userInfo?.studentId || '',
+				'formData.name': app.globalData.userInfo.realName || '',
+				'formData.phone': app.globalData.userInfo.phone || '',
+				'formData.studentId': app.globalData.userInfo.studentId || '',
+			})
+		} else {
+			// 如果全局没有用户信息，从数据库获取
+			wx.cloud.callFunction({
+				name: 'login',
+				success: res => {
+					const openid = res.result.openid
+					const db = wx.cloud.database()
+
+					db.collection('users')
+						.doc(openid)
+						.get()
+						.then(res => {
+							app.globalData.userInfo = res.data
+							app.globalData.hasLogin = true
+
+							this.setData({
+								'formData.name': res.data.realName || '',
+								'formData.phone': res.data.phone || '',
+								'formData.studentId': res.data.studentId || '',
+							})
+						})
+				},
 			})
 		}
 	},
@@ -78,67 +95,87 @@ Page({
 		}
 
 		// 检查时间段是否已被预约
-		const isAlreadyBooked = this.checkIfBooked()
-		if (isAlreadyBooked) {
-			this.showError('该时间段已被预约，请选择其他时间')
-			return
-		}
+		this.checkIfBooked().then(isBooked => {
+			if (isBooked) {
+				this.showError('该时间段已被预约，请选择其他时间')
+				return
+			}
 
-		// 构建预约数据
-		const appointment = {
-			id: new Date().getTime(), // 使用时间戳作为临时ID
-			date: this.data.date,
-			timeId: parseInt(this.data.timeId),
-			startTime: this.data.startTime,
-			endTime: this.data.endTime,
-			name,
-			studentId,
-			phone,
-			purpose: purpose || '未填写',
-			status: 'pending', // 预约状态：pending-未开始，completed-已完成，canceled-已取消
-			createTime: new Date().toISOString(),
-		}
+			// 获取用户ID
+			wx.cloud.callFunction({
+				name: 'login',
+				success: res => {
+					const openid = res.result.openid
+					const db = wx.cloud.database()
 
-		// 添加预约（在实际应用中应该调用后端接口）
-		const allAppointments = app.globalData.appointments || []
-		allAppointments.push(appointment)
-		app.globalData.appointments = allAppointments
+					// 构建预约数据
+					const appointmentData = {
+						userId: openid,
+						roomName: '面试室', // 默认房间名称
+						date: this.data.date,
+						timeId: parseInt(this.data.timeId),
+						startTime: this.data.startTime,
+						endTime: this.data.endTime,
+						name: name,
+						studentId: studentId,
+						phone: phone,
+						purpose: purpose || '未填写',
+						status: 'pending', // 预约状态：pending-未开始，completed-已完成，canceled-已取消
+						createdAt: db.serverDate(),
+					}
 
-		// 保存到本地存储
-		wx.setStorageSync('appointments', allAppointments)
+					// 添加到数据库
+					db.collection('room_reservation')
+						.add({
+							data: appointmentData,
+						})
+						.then(res => {
+							// 显示成功提示
+							wx.showToast({
+								title: '预约成功',
+								icon: 'success',
+								duration: 2000,
+							})
 
-		// 保存用户信息到本地，方便下次自动填充
-		wx.setStorageSync('userProfile', {
-			name,
-			studentId,
-			phone,
+							// 返回上一页
+							setTimeout(() => {
+								wx.navigateBack()
+							}, 1500)
+						})
+						.catch(err => {
+							console.error('添加预约失败', err)
+							this.showError('预约失败，请重试')
+						})
+				},
+				fail: err => {
+					console.error('获取用户ID失败', err)
+					this.showError('网络错误，请重试')
+				},
+			})
 		})
-
-		// 显示成功提示
-		wx.showToast({
-			title: '预约成功',
-			icon: 'success',
-			duration: 2000,
-		})
-
-		// 返回上一页
-		setTimeout(() => {
-			wx.navigateBack()
-		}, 1500)
 	},
 
 	// 检查时间段是否已被预约
 	checkIfBooked: function () {
-		const appointments = app.globalData.appointments || wx.getStorageSync('appointments') || []
-		const date = this.data.date
-		const timeId = parseInt(this.data.timeId)
+		return new Promise((resolve, reject) => {
+			const db = wx.cloud.database()
 
-		return appointments.some(
-			appointment =>
-				appointment.date === date &&
-				appointment.timeId === timeId &&
-				appointment.status !== 'canceled',
-		)
+			db.collection('room_reservation')
+				.where({
+					date: this.data.date,
+					timeId: parseInt(this.data.timeId),
+					status: 'pending',
+				})
+				.count()
+				.then(res => {
+					resolve(res.total > 0)
+				})
+				.catch(err => {
+					console.error('查询预约状态失败', err)
+					// 出错时默认为未被预约，让用户可以继续
+					resolve(false)
+				})
+		})
 	},
 
 	// 返回上一页

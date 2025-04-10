@@ -38,39 +38,133 @@ Page({
 	loginSuccess: function (userInfo) {
 		console.log('登录成功', userInfo)
 
-		// 保存用户信息
-		app.globalData.userInfo = userInfo
-		app.globalData.hasLogin = true
-
-		// 保存到本地存储
-		wx.setStorageSync('userInfo', userInfo)
-		wx.setStorageSync('hasLogin', true)
-
-		// 显示成功提示
-		wx.showToast({
-			title: '登录成功',
-			icon: 'success',
-			duration: 1500,
+		// 显示加载状态
+		wx.showLoading({
+			title: '登录中',
 		})
 
-		// 检查是否已完善个人资料
-		setTimeout(() => {
-			this.checkUserProfile()
-		}, 1500)
+		// 调用云函数获取openid
+		wx.cloud.callFunction({
+			name: 'login',
+			success: res => {
+				console.log('云函数返回结果:', res)
+
+				if (!res.result || !res.result.openid) {
+					wx.hideLoading()
+					console.error('云函数返回结果异常:', res)
+					wx.showToast({
+						title: '登录失败',
+						icon: 'none',
+					})
+					return
+				}
+
+				const openid = res.result.openid
+				console.log('获取openid成功', openid)
+
+				// 查询用户是否已存在
+				const db = wx.cloud.database()
+				db.collection('users')
+					.doc(openid)
+					.get()
+					.then(res => {
+						wx.hideLoading()
+						console.log('用户已存在', res.data)
+						// 更新用户信息
+						db.collection('users')
+							.doc(openid)
+							.update({
+								data: {
+									nickName: userInfo.nickName,
+									avatarUrl: userInfo.avatarUrl,
+									updatedAt: db.serverDate(),
+								},
+							})
+
+						// 保存到全局数据
+						app.globalData.userInfo = res.data
+						app.globalData.hasLogin = true
+
+						// 检查个人资料完善情况
+						this.checkUserProfile(res.data)
+					})
+					.catch(err => {
+						console.log('用户不存在，创建新用户', err)
+						// 创建新用户
+						db.collection('users')
+							.add({
+								data: {
+									_id: openid,
+									nickName: userInfo.nickName,
+									avatarUrl: userInfo.avatarUrl,
+									realName: '',
+									studentId: '',
+									phone: '',
+									isAdmin: false,
+									createdAt: db.serverDate(),
+								},
+							})
+							.then(res => {
+								wx.hideLoading()
+								// 保存到全局数据
+								userInfo._id = openid
+								app.globalData.userInfo = userInfo
+								app.globalData.hasLogin = true
+
+								// 显示成功提示
+								wx.showToast({
+									title: '登录成功',
+									icon: 'success',
+									duration: 1500,
+								})
+
+								// 跳转到个人信息完善页面
+								setTimeout(() => {
+									wx.redirectTo({
+										url: '/pages/userinfo/userinfo',
+									})
+								}, 1500)
+							})
+							.catch(err => {
+								wx.hideLoading()
+								console.error('创建用户失败', err)
+								wx.showToast({
+									title: '登录失败',
+									icon: 'none',
+								})
+							})
+					})
+			},
+			fail: err => {
+				wx.hideLoading()
+				console.error('云函数调用失败', err)
+				wx.showToast({
+					title: '登录失败',
+					icon: 'none',
+				})
+			},
+		})
 	},
 
 	// 检查用户是否已完善个人资料
-	checkUserProfile: function () {
-		const userProfile = wx.getStorageSync('userProfile')
-
-		if (!userProfile || !userProfile.name || !userProfile.studentId || !userProfile.phone) {
+	checkUserProfile: function (userData) {
+		if (!userData || !userData.realName || !userData.studentId || !userData.phone) {
 			// 未完善个人资料，跳转到个人信息页面
 			wx.redirectTo({
 				url: '/pages/userinfo/userinfo',
 			})
 		} else {
+			// 显示成功提示
+			wx.showToast({
+				title: '登录成功',
+				icon: 'success',
+				duration: 1500,
+			})
+
 			// 已完善个人资料，跳转到首页
-			this.navigateToIndex()
+			setTimeout(() => {
+				this.navigateToIndex()
+			}, 1500)
 		}
 	},
 

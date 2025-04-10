@@ -12,22 +12,40 @@ App({
 	onLaunch: function () {
 		console.log('App onLaunch')
 
-		// 获取本地存储的用户信息
-		const userInfo = wx.getStorageSync('userInfo')
-		const hasLogin = wx.getStorageSync('hasLogin')
-
-		if (userInfo && hasLogin) {
-			console.log('用户已登录', userInfo)
-			this.globalData.userInfo = userInfo
-			this.globalData.hasLogin = hasLogin
+		// 初始化云开发环境
+		if (!wx.cloud) {
+			console.error('请使用 2.2.3 或以上的基础库以使用云能力')
 		} else {
-			console.log('用户未登录')
+			wx.cloud.init({
+				env: 'cloud1-1gketkbl862fec31', // 请替换为您的云环境ID
+				traceUser: true,
+			})
 		}
 
-		// 加载本地存储的预约数据
-		const appointments = wx.getStorageSync('appointments')
-		if (appointments) {
-			this.globalData.appointments = appointments
-		}
+		// 获取用户登录信息
+		wx.cloud.callFunction({
+			name: 'login',
+			success: res => {
+				const openid = res.result.openid
+				// 查询用户信息
+				wx.cloud
+					.database()
+					.collection('users')
+					.doc(openid)
+					.get()
+					.then(res => {
+						if (res.data) {
+							this.globalData.userInfo = res.data
+							this.globalData.hasLogin = true
+						}
+					})
+					.catch(err => {
+						console.log('用户未登录或不存在', err)
+					})
+			},
+			fail: err => {
+				console.error('云函数调用失败', err)
+			},
+		})
 	},
 })

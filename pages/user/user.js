@@ -146,10 +146,6 @@ Page({
 					app.globalData.userInfo = null
 					app.globalData.hasLogin = false
 
-					// 清除本地存储
-					wx.removeStorageSync('userInfo')
-					wx.removeStorageSync('hasLogin')
-
 					// 跳转到登录页
 					wx.reLaunch({
 						url: '/pages/login/login',

@@ -32,32 +32,53 @@ Page({
 
 	// 加载预约详情
 	loadAppointment: function (id) {
-		// 获取预约数据（实际应用中应该从服务器获取）
-		const appointments = app.globalData.appointments || wx.getStorageSync('appointments') || []
-		const appointment = appointments.find(item => item.id == id)
+		wx.showLoading({
+			title: '加载中',
+		})
 
-		if (appointment) {
-			// 格式化创建时间
-			const createTime = new Date(appointment.createTime)
-			const formatCreateTime = `${createTime.getFullYear()}-${this.formatNumber(
-				createTime.getMonth() + 1,
-			)}-${this.formatNumber(createTime.getDate())} ${this.formatNumber(
-				createTime.getHours(),
-			)}:${this.formatNumber(createTime.getMinutes())}`
+		const db = wx.cloud.database()
 
-			this.setData({
-				appointment,
-				formatCreateTime,
+		// 从数据库获取预约信息
+		db.collection('room_reservation')
+			.doc(id)
+			.get()
+			.then(res => {
+				wx.hideLoading()
+
+				if (res.data) {
+					// 格式化创建时间
+					let formatCreateTime = '未知'
+					if (res.data.createdAt) {
+						const createTime = new Date(res.data.createdAt)
+						formatCreateTime = `${createTime.getFullYear()}-${this.formatNumber(
+							createTime.getMonth() + 1,
+						)}-${this.formatNumber(createTime.getDate())} ${this.formatNumber(
+							createTime.getHours(),
+						)}:${this.formatNumber(createTime.getMinutes())}`
+					}
+
+					this.setData({
+						appointment: res.data,
+						formatCreateTime,
+					})
+				} else {
+					wx.showToast({
+						title: '未找到预约信息',
+						icon: 'none',
+					})
+					setTimeout(() => {
+						wx.navigateBack()
+					}, 1500)
+				}
 			})
-		} else {
-			wx.showToast({
-				title: '未找到预约信息',
-				icon: 'none',
+			.catch(err => {
+				wx.hideLoading()
+				console.error('获取预约详情失败', err)
+				wx.showToast({
+					title: '加载失败',
+					icon: 'none',
+				})
 			})
-			setTimeout(() => {
-				wx.navigateBack()
-			}, 1500)
-		}
 	},
 
 	// 格式化数字
@@ -83,29 +104,40 @@ Page({
 	doCancelAppointment: function () {
 		if (!this.data.id) return
 
-		// 获取所有预约
-		let appointments = app.globalData.appointments || []
+		wx.showLoading({
+			title: '处理中',
+		})
 
-		// 找到要取消的预约
-		const index = appointments.findIndex(item => item.id == this.data.id)
+		const db = wx.cloud.database()
+		console.log('取消预约ID:', this.data.id)
 
-		if (index !== -1) {
-			// 更新状态为已取消
-			appointments[index].status = 'canceled'
-			app.globalData.appointments = appointments
-
-			// 保存到本地存储
-			wx.setStorageSync('appointments', appointments)
-
-			// 刷新详情
-			this.loadAppointment(this.data.id)
-
-			// 显示取消成功提示
-			wx.showToast({
-				title: '预约已取消',
-				icon: 'success',
+		// 更新预约状态为已取消
+		db.collection('room_reservation')
+			.doc(this.data.id)
+			.update({
+				data: {
+					status: 'canceled',
+					updatedAt: db.serverDate(),
+				},
 			})
-		}
+			.then(res => {
+				wx.hideLoading()
+				wx.showToast({
+					title: '预约已取消',
+					icon: 'success',
+				})
+
+				// 刷新详情
+				this.loadAppointment(this.data.id)
+			})
+			.catch(err => {
+				wx.hideLoading()
+				console.error('取消预约失败', err)
+				wx.showToast({
+					title: '操作失败',
+					icon: 'none',
+				})
+			})
 	},
 
 	// 返回上一页
