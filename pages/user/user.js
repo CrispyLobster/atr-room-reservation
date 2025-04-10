@@ -19,8 +19,22 @@ Page({
 	},
 
 	onShow: function () {
-		// 每次显示页面时刷新预约数据
-		this.loadAppointments()
+		// 每次显示页面时更新用户信息
+		const userInfo = app.globalData.userInfo || {}
+		const userProfile = wx.getStorageSync('userProfile') || {}
+
+		// 合并用户信息，确保显示用户的姓名
+		const updatedUserInfo = {
+			...userInfo,
+			...userProfile,
+		}
+
+		this.setData({
+			userInfo: updatedUserInfo,
+		})
+
+		// 不再每次自动刷新预约数据
+		// this.loadAppointments()
 	},
 
 	// 加载预约列表

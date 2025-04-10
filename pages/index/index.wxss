@@ -1,7 +1,14 @@
+.container {
+	padding: 30rpx;
+	box-sizing: border-box;
+	width: 100%;
+}
+
 .date-picker {
 	width: 100%;
 	margin-bottom: 30rpx;
 	overflow: hidden;
+	box-sizing: border-box;
 }
 
 .date-scroll {
@@ -12,6 +19,8 @@
 .date-tabs {
 	display: flex;
 	width: 100%;
+	padding: 0 10rpx;
+	box-sizing: border-box;
 }
 
 .date-tab {
@@ -158,6 +167,9 @@
 	padding: 0;
 	flex-shrink: 0;
 	margin-left: 10rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .no-slots {

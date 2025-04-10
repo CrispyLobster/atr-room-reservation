@@ -3,9 +3,9 @@
      <view class="user-card">
           <view class="user-info">
                <view class="avatar-placeholder">
-                    {{userInfo.nickName ? userInfo.nickName.substr(0,1) : '用'}}
+                    {{userInfo.name ? userInfo.name.substr(0,1) : (userInfo.nickName ? userInfo.nickName.substr(0,1) : '访')}}
                </view>
-               <view class="user-name">{{userInfo.nickName || '微信用户'}}</view>
+               <view class="user-name">{{userInfo.name || userInfo.nickName || '访客用户'}}</view>
           </view>
      </view>
      <!-- 功能列表 -->

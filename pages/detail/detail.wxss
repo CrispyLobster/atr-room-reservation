@@ -1,6 +1,13 @@
+.container {
+	padding: 30rpx;
+	box-sizing: border-box;
+	width: 100%;
+}
+
 .detail-card {
 	width: 100%;
 	padding: 30rpx;
+	box-sizing: border-box;
 }
 
 .detail-header {
@@ -14,6 +21,7 @@
 
 .detail-section {
 	margin-bottom: 30rpx;
+	width: 100%;
 }
 
 .section-title {
@@ -25,20 +33,22 @@
 
 .detail-item {
 	display: flex;
-	justify-content: space-between;
 	margin-bottom: 15rpx;
 	font-size: 14px;
+	width: 100%;
 }
 
 .item-label {
 	color: #666666;
-	width: 25%;
+	min-width: 25%;
+	flex-shrink: 0;
 }
 
 .item-value {
 	color: #333333;
-	width: 75%;
+	flex-grow: 1;
 	text-align: right;
+	word-break: break-all;
 }
 
 .status-tag {
@@ -61,12 +71,16 @@
 .status-canceled {
 	background-color: rgba(244, 67, 54, 0.1);
 	color: #f44336;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .detail-actions {
 	margin-top: 40rpx;
 	display: flex;
 	justify-content: center;
+	width: 100%;
 }
 
 .btn-cancel {
@@ -77,6 +91,9 @@
 	background-color: #f44336;
 	border-radius: 5rpx;
 	font-size: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .no-data {
@@ -98,4 +115,7 @@
 	border-radius: 35rpx;
 	font-size: 14px;
 	margin-top: 30rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }

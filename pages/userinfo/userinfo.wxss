@@ -1,79 +1,82 @@
 .container {
-  padding: 30rpx;
-  box-sizing: border-box;
+	padding: 30rpx;
+	box-sizing: border-box;
 }
 
 .header {
-  margin-bottom: 40rpx;
+	margin-bottom: 40rpx;
 }
 
 .title {
-  font-size: 24px;
-  font-weight: bold;
-  color: #333333;
-  margin-bottom: 10rpx;
+	font-size: 24px;
+	font-weight: bold;
+	color: #333333;
+	margin-bottom: 10rpx;
 }
 
 .subtitle {
-  font-size: 14px;
-  color: #999999;
+	font-size: 14px;
+	color: #999999;
 }
 
 .form-card {
-  width: 100%;
-  background-color: #FFFFFF;
-  border-radius: 10rpx;
-  padding: 30rpx;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
-  box-sizing: border-box;
+	width: 100%;
+	background-color: #ffffff;
+	border-radius: 10rpx;
+	padding: 30rpx;
+	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+	box-sizing: border-box;
 }
 
 .form-content {
-  width: 100%;
-  box-sizing: border-box;
+	width: 100%;
+	box-sizing: border-box;
 }
 
 .form-group {
-  margin-bottom: 30rpx;
-  width: 100%;
+	margin-bottom: 30rpx;
+	width: 100%;
 }
 
 .form-label {
-  font-size: 14px;
-  color: #333333;
-  margin-bottom: 10rpx;
-  display: block;
+	font-size: 14px;
+	color: #333333;
+	margin-bottom: 10rpx;
+	display: block;
 }
 
 .required {
-  color: #F44336;
+	color: #f44336;
 }
 
 .form-input {
-  width: 100%;
-  height: 80rpx;
-  background-color: #FFFFFF;
-  border: 1rpx solid #DDDDDD;
-  border-radius: 5rpx;
-  padding: 0 20rpx;
-  box-sizing: border-box;
-  font-size: 14px;
+	width: 100%;
+	height: 80rpx;
+	background-color: #ffffff;
+	border: 1rpx solid #dddddd;
+	border-radius: 5rpx;
+	padding: 0 20rpx;
+	box-sizing: border-box;
+	font-size: 14px;
 }
 
 .form-buttons {
-  display: flex;
-  justify-content: center;
-  margin-top: 50rpx;
-  width: 100%;
+	display: flex;
+	justify-content: center;
+	margin-top: 50rpx;
+	width: 100%;
 }
 
 .btn-submit {
-  width: 90%;
-  height: 90rpx;
-  line-height: 90rpx;
-  background-color: #3A5FCD;
-  color: #FFFFFF;
-  font-size: 16px;
-  text-align: center;
-  border-radius: 45rpx;
-} 
+	width: 90%;
+	height: 90rpx;
+	line-height: 90rpx;
+	background-color: #3a5fcd;
+	color: #ffffff;
+	font-size: 16px;
+	text-align: center;
+	border-radius: 45rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}

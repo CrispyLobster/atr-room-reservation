@@ -23,11 +23,15 @@
 		"list": [
 			{
 				"pagePath": "pages/index/index",
-				"text": "预约日历"
+				"text": "预约日历",
+				"iconPath": "images/calendar.png",
+				"selectedIconPath": "images/calendar-active.png"
 			},
 			{
 				"pagePath": "pages/user/user",
-				"text": "个人中心"
+				"text": "个人中心",
+				"iconPath": "images/user.png",
+				"selectedIconPath": "images/user-active.png"
 			}
 		]
 	},

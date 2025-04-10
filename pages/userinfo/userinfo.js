@@ -61,11 +61,18 @@ Page({
 			app.globalData.userInfo = {
 				...app.globalData.userInfo,
 				...userProfile,
+				nickName: name,
+			}
+		} else {
+			app.globalData.userInfo = {
+				nickName: name,
+				...userProfile,
 			}
 		}
 
 		// 保存到本地存储
 		wx.setStorageSync('userProfile', userProfile)
+		wx.setStorageSync('userInfo', app.globalData.userInfo)
 
 		// 显示成功提示
 		wx.showToast({

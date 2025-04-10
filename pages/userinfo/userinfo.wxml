@@ -7,24 +7,24 @@
           <form bindsubmit="submitUserInfo">
                <view class="form-content">
                     <view class="form-group">
-                         <text class="form-label">
-                              姓名
+                         <view class="form-label">
+                              <text>姓名</text>
                               <text class="required">*</text>
-                         </text>
+                         </view>
                          <input class="form-input" name="name" placeholder="请输入姓名" value="{{userInfo.name}}" />
                     </view>
                     <view class="form-group">
-                         <text class="form-label">
-                              学号
+                         <view class="form-label">
+                              <text>学号</text>
                               <text class="required">*</text>
-                         </text>
+                         </view>
                          <input class="form-input" name="studentId" placeholder="请输入学号" type="number" value="{{userInfo.studentId}}" />
                     </view>
                     <view class="form-group">
-                         <text class="form-label">
-                              手机号码
+                         <view class="form-label">
+                              <text>手机号码</text>
                               <text class="required">*</text>
-                         </text>
+                         </view>
                          <input class="form-input" name="phone" placeholder="请输入手机号码" type="number" value="{{userInfo.phone}}" />
                     </view>
                </view>
