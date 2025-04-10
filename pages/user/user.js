@@ -70,64 +70,108 @@ Page({
 
 	// 选择头像
 	onChooseAvatar(e) {
-		console.log('用户选择了头像：', e.detail)
+		console.log('头像选择事件触发，详情：', e)
 		const { avatarUrl } = e.detail
+		console.log('获取到的临时头像路径：', avatarUrl)
+
+		if (!avatarUrl) {
+			console.error('未获取到有效的头像路径')
+			wx.showToast({
+				title: '获取头像失败',
+				icon: 'none',
+			})
+			return
+		}
+
+		// 先更新UI
+		this.setData({
+			'userInfo.avatarUrl': avatarUrl,
+		})
 
 		// 显示加载中
 		wx.showLoading({
 			title: '保存中',
 		})
 
-		// 获取数据库和当前用户ID
-		const db = wx.cloud.database()
-
+		// 通过Login云函数获取openid
 		wx.cloud.callFunction({
 			name: 'login',
 			success: res => {
+				console.log('登录成功，获取到的用户信息：', res.result)
 				const openid = res.result.openid
-
-				// 更新头像到数据库
-				db.collection('users')
-					.doc(openid)
-					.update({
-						data: {
-							avatarUrl: avatarUrl,
-							updatedAt: db.serverDate(),
-						},
+				if (!openid) {
+					wx.hideLoading()
+					console.error('未获取到有效的openid')
+					wx.showToast({
+						title: '登录失败，请重试',
+						icon: 'none',
 					})
-					.then(res => {
+					return
+				}
+
+				// 获取数据库实例
+				const db = wx.cloud.database()
+				console.log('正在更新用户头像，openid:', openid, '头像路径:', avatarUrl)
+
+				// 尝试直接使用本地文件路径上传到云存储
+				const cloudPath = `avatars/${openid}_${new Date().getTime()}.jpg`
+				wx.cloud.uploadFile({
+					cloudPath: cloudPath,
+					filePath: avatarUrl,
+					success: uploadRes => {
+						console.log('头像上传成功：', uploadRes)
+						const fileID = uploadRes.fileID
+
+						// 更新头像到数据库
+						db.collection('users')
+							.doc(openid)
+							.update({
+								data: {
+									avatarUrl: fileID,
+									updatedAt: db.serverDate(),
+								},
+							})
+							.then(updateRes => {
+								wx.hideLoading()
+								console.log('数据库更新成功：', updateRes)
+
+								// 更新全局用户信息
+								if (app.globalData.userInfo) {
+									app.globalData.userInfo.avatarUrl = fileID
+								}
+
+								// 刷新页面显示
+								this.fetchUserInfo()
+
+								// 显示成功提示
+								wx.showToast({
+									title: '头像更新成功',
+									icon: 'success',
+									duration: 1500,
+								})
+							})
+							.catch(updateErr => {
+								wx.hideLoading()
+								console.error('数据库更新失败：', updateErr)
+								wx.showToast({
+									title: '保存失败，请重试',
+									icon: 'none',
+								})
+							})
+					},
+					fail: uploadErr => {
 						wx.hideLoading()
-						console.log('更新头像成功', res)
-
-						// 更新全局用户信息
-						if (app.globalData.userInfo) {
-							app.globalData.userInfo.avatarUrl = avatarUrl
-						}
-
-						// 更新当前页面显示
-						this.setData({
-							'userInfo.avatarUrl': avatarUrl,
-						})
-
-						// 显示成功提示
+						console.error('头像上传失败：', uploadErr)
 						wx.showToast({
-							title: '头像更新成功',
-							icon: 'success',
-							duration: 1500,
-						})
-					})
-					.catch(err => {
-						wx.hideLoading()
-						console.error('更新头像失败', err)
-						wx.showToast({
-							title: '保存失败，请重试',
+							title: '头像上传失败',
 							icon: 'none',
 						})
-					})
+					},
+				})
 			},
 			fail: err => {
 				wx.hideLoading()
-				console.error('获取用户openid失败', err)
+				console.error('获取用户openid失败：', err)
 				wx.showToast({
 					title: '网络错误，请重试',
 					icon: 'none',
