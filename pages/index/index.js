@@ -73,7 +73,12 @@ function generateTimeSlots(date, bookedSlots) {
 		// 条件2：检查是否已被预约
 		if (bookedSlots && bookedSlots.length > 0) {
 			bookedSlots.forEach(bookedSlot => {
-				if (String(bookedSlot.timeId) === String(slot.id)) {
+				// 确保类型一致进行比较
+				const slotId = parseInt(slot.id)
+				const bookedId = parseInt(bookedSlot)
+
+				if (slotId === bookedId) {
+					console.log(`时间段 ${slot.startTime}-${slot.endTime} 已被预约`)
 					slot.isBooked = true
 				}
 			})
@@ -89,6 +94,7 @@ Page({
 		selectedDate: '',
 		timeSlots: [],
 		appointmentCount: 0,
+		bookedSlots: [],
 	},
 
 	onLoad: function (options) {
@@ -102,8 +108,10 @@ Page({
 	},
 
 	onShow: function () {
+		console.log('页面显示，刷新数据')
 		// 每次显示页面时刷新时间段数据
 		if (this.data.selectedDate) {
+			// 强制刷新数据，确保同步
 			this.loadTimeSlots(this.data.selectedDate)
 		}
 
@@ -113,34 +121,59 @@ Page({
 
 	// 下拉刷新
 	onPullDownRefresh: function () {
+		console.log('下拉刷新，重新加载数据')
+		// 强制刷新时间段数据
 		this.loadTimeSlots(this.data.selectedDate)
 
 		// 更新用户预约次数
 		this.loadAppointmentCount()
 
+		// 提示用户
+		wx.showToast({
+			title: '刷新成功',
+			icon: 'success',
+			duration: 1000,
+		})
+
 		wx.stopPullDownRefresh()
 	},
 
 	// 加载用户预约数量
-	loadAppointmentCount: function() {
+	loadAppointmentCount: function () {
+		console.log('加载当前登录用户的预约数量')
+
+		// 获取当前用户的openid
 		wx.cloud.callFunction({
 			name: 'login',
+			data: {},
 			success: res => {
+				console.log('获取用户openid成功:', res.result.openid)
 				const openid = res.result.openid
+
 				const db = wx.cloud.database()
-				
 				db.collection('room_reservation')
 					.where({
-						userId: openid,
-						status: 'pending'
+						_openid: openid,
+						status: 'pending',
 					})
 					.count()
 					.then(res => {
+						console.log('当前用户的预约数量:', res.total)
 						this.setData({
-							appointmentCount: res.total
+							appointmentCount: res.total,
 						})
 					})
-			}
+					.catch(err => {
+						console.error('查询预约数量失败:', err)
+					})
+			},
+			fail: err => {
+				console.error('获取用户openid失败:', err)
+				wx.showToast({
+					title: '获取用户信息失败',
+					icon: 'none',
+				})
+			},
 		})
 	},
 
@@ -160,38 +193,39 @@ Page({
 		wx.showLoading({
 			title: '加载中',
 		})
-		
-		const db = wx.cloud.database()
-		
-		// 查询当天已预约的时间段
-		db.collection('room_reservation')
-			.where({
+
+		// 使用云函数查询当天所有预约
+		wx.cloud.callFunction({
+			name: 'getAppointments',
+			data: {
 				date: date,
-				status: 'pending'  // 只考虑未取消的预约
-			})
-			.field({
-				timeId: true
-			})
-			.get()
-			.then(res => {
-				wx.hideLoading()
-				// 生成时间段列表
-				const timeSlots = generateTimeSlots(date, res.data)
-				
+			},
+			success: res => {
+				console.log('云函数查询预约结果:', res.result)
+				const appointments = res.result.data || []
+
+				const bookedTimeIds = appointments.map(item => item.timeId)
+				console.log('已预约的时间段IDs:', bookedTimeIds)
+
+				// 生成可用时间段
+				const timeSlots = generateTimeSlots(date, bookedTimeIds)
+
 				this.setData({
-					timeSlots,
+					timeSlots: timeSlots,
+					selectedTimeSlotId: null,
 				})
-			})
-			.catch(err => {
+
 				wx.hideLoading()
-				console.error('获取预约时间段失败', err)
-				// 生成时间段列表(空预约)
-				const timeSlots = generateTimeSlots(date, [])
-				
-				this.setData({
-					timeSlots,
+			},
+			fail: err => {
+				console.error('查询预约失败:', err)
+				wx.hideLoading()
+				wx.showToast({
+					title: '加载预约信息失败',
+					icon: 'none',
 				})
-			})
+			},
+		})
 	},
 
 	// 跳转到预约表单页

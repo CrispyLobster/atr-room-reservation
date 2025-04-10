@@ -5,9 +5,7 @@
           <text class="slogan">简单便捷的面试室预约服务</text>
      </view>
      <view class="login-area">
-          <button class="btn-login" open-type="getUserInfo" bindgetuserinfo="onGetUserInfo">
-               微信一键登录
-          </button>
+          <button class="btn-login" bindtap="onGetUserInfo">微信一键登录</button>
           <view class="agreement">
                <text class="agreement-text">登录即表示您同意</text>
                <text class="agreement-link" bindtap="showUserAgreement">《用户协议》</text>

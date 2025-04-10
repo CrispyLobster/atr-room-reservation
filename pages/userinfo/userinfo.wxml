@@ -1,7 +1,10 @@
 <view class="container">
      <view class="header">
-          <view class="title">完善个人信息</view>
-          <view class="subtitle">请填写您的基本信息，方便预约使用</view>
+          <view class="title">{{isFirstLogin ? '绑定学号信息' : '完善个人信息'}}</view>
+          <view class="subtitle">
+               <block wx:if="{{isFirstLogin}}">您好，{{nickName}}！请绑定您的学号信息以便使用预约服务</block>
+               <block wx:else>请填写您的基本信息，方便预约使用</block>
+          </view>
      </view>
      <view class="card form-card">
           <form bindsubmit="submitUserInfo">
@@ -29,7 +32,9 @@
                     </view>
                </view>
                <view class="form-buttons">
-                    <button class="btn-submit" form-type="submit">保存信息</button>
+                    <button class="btn-submit" form-type="submit">
+                         {{isFirstLogin ? '绑定并继续' : '保存信息'}}
+                    </button>
                </view>
           </form>
      </view>

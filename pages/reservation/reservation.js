@@ -12,6 +12,7 @@ Page({
 			phone: '',
 			purpose: '',
 		},
+		isSubmitting: false, // 防重复提交标记
 	},
 
 	onLoad: function (options) {
@@ -69,35 +70,85 @@ Page({
 		return true
 	},
 
+	// 检查时间段是否已被预约
+	checkIfBooked: function () {
+		return new Promise((resolve, reject) => {
+			const db = wx.cloud.database()
+
+			console.log('检查时间段是否已被预约:', this.data.date, '时间ID:', this.data.timeId)
+
+			db.collection('room_reservation')
+				.where({
+					date: this.data.date,
+					timeId: parseInt(this.data.timeId),
+					status: 'pending',
+				})
+				.count()
+				.then(res => {
+					const isBooked = res.total > 0
+					console.log('该时间段预约状态:', isBooked ? '已被预约' : '可预约', '数量:', res.total)
+					resolve(isBooked)
+				})
+				.catch(err => {
+					console.error('查询预约状态失败', err)
+					// 出错时默认为已被预约，确保安全
+					resolve(true)
+				})
+		})
+	},
+
 	// 提交预约表单
 	submitReservation: function (e) {
-		const { name, studentId, phone, purpose } = e.detail.value
+		// 防重复提交
+		if (this.data.isSubmitting) {
+			console.log('阻止重复提交')
+			return
+		}
+
+		this.setData({
+			isSubmitting: true,
+		})
+
+		const { realName, studentId, phone, purpose } = e.detail.value
 
 		// 表单验证
-		if (!name.trim()) {
+		if (!realName.trim()) {
 			this.showError('请输入姓名')
+			this.setData({ isSubmitting: false })
 			return
 		}
 
 		if (!studentId.trim()) {
 			this.showError('请输入学号')
+			this.setData({ isSubmitting: false })
 			return
 		}
 
 		if (!phone.trim()) {
 			this.showError('请输入手机号码')
+			this.setData({ isSubmitting: false })
 			return
 		}
 
 		if (!/^1\d{10}$/.test(phone)) {
 			this.showError('手机号码格式不正确')
+			this.setData({ isSubmitting: false })
 			return
 		}
 
-		// 检查时间段是否已被预约
+		wx.showLoading({
+			title: '提交中...',
+		})
+
+		// 再次检查时间段是否已被预约（最新状态）
 		this.checkIfBooked().then(isBooked => {
 			if (isBooked) {
+				wx.hideLoading()
 				this.showError('该时间段已被预约，请选择其他时间')
+				this.setData({ isSubmitting: false })
+				setTimeout(() => {
+					wx.navigateBack()
+				}, 1500)
 				return
 			}
 
@@ -116,7 +167,7 @@ Page({
 						timeId: parseInt(this.data.timeId),
 						startTime: this.data.startTime,
 						endTime: this.data.endTime,
-						name: name,
+						name: realName,
 						studentId: studentId,
 						phone: phone,
 						purpose: purpose || '未填写',
@@ -130,6 +181,7 @@ Page({
 							data: appointmentData,
 						})
 						.then(res => {
+							wx.hideLoading()
 							// 显示成功提示
 							wx.showToast({
 								title: '预约成功',
@@ -143,38 +195,19 @@ Page({
 							}, 1500)
 						})
 						.catch(err => {
+							wx.hideLoading()
+							this.setData({ isSubmitting: false })
 							console.error('添加预约失败', err)
 							this.showError('预约失败，请重试')
 						})
 				},
 				fail: err => {
+					wx.hideLoading()
+					this.setData({ isSubmitting: false })
 					console.error('获取用户ID失败', err)
 					this.showError('网络错误，请重试')
 				},
 			})
-		})
-	},
-
-	// 检查时间段是否已被预约
-	checkIfBooked: function () {
-		return new Promise((resolve, reject) => {
-			const db = wx.cloud.database()
-
-			db.collection('room_reservation')
-				.where({
-					date: this.data.date,
-					timeId: parseInt(this.data.timeId),
-					status: 'pending',
-				})
-				.count()
-				.then(res => {
-					resolve(res.total > 0)
-				})
-				.catch(err => {
-					console.error('查询预约状态失败', err)
-					// 出错时默认为未被预约，让用户可以继续
-					resolve(false)
-				})
 		})
 	},
 
