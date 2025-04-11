@@ -25,17 +25,23 @@
 }
 
 .welcome {
+	display: flex;
 	font-size: 28px;
 	font-weight: bold;
 	color: #3a5fcd;
 	margin-bottom: 20rpx;
 	text-align: center;
+	align-items: center;
+	justify-content: center;
 }
 
 .slogan {
+	display: flex;
 	font-size: 14px;
 	color: #999999;
 	text-align: center;
+	align-items: center;
+	justify-content: center;
 }
 
 .login-area {

@@ -1,8 +1,8 @@
 <view class="container login-container">
-     <view class="logo-area">
-          <view class="logo-text">面试室预约</view>
-          <text class="welcome">欢迎使用面试室预约助手</text>
-          <text class="slogan">简单便捷的面试室预约服务</text>
+     <view class="logo-container">
+          <view class="logo-text">ATR研讨室预约</view>
+          <text class="welcome">欢迎使用研讨室预约助手</text>
+          <text class="slogan">简单便捷的ATR研讨室预约服务</text>
      </view>
      <view class="login-area">
           <button class="btn-login" bindtap="onGetUserInfo">微信一键登录</button>

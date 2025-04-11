@@ -243,7 +243,7 @@ Page({
 	showUserAgreement: function () {
 		wx.showModal({
 			title: '用户协议',
-			content: '这里是面试室预约助手的用户协议内容...',
+			content: '这里是ATR研讨室预约助手的用户协议内容...',
 			showCancel: false,
 		})
 	},
@@ -252,7 +252,7 @@ Page({
 	showPrivacyPolicy: function () {
 		wx.showModal({
 			title: '隐私政策',
-			content: '这里是面试室预约助手的隐私政策内容...',
+			content: '这里是ATR研讨室预约助手的隐私政策内容...',
 			showCancel: false,
 		})
 	},

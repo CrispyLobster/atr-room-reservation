@@ -5,6 +5,7 @@ Page({
 		userInfo: {},
 		appointments: [],
 		avatarLoading: true,
+		avatarUploading: false,
 		statusText: {
 			pending: '未开始',
 			completed: '已完成',
@@ -18,54 +19,55 @@ Page({
 			// 优先使用已缓存的信息，避免加载闪烁
 			const userInfo = app.globalData.userInfo
 
+			// 直接判断是否有可用的头像URL（临时URL或普通URL）
+			const hasValidAvatar =
+				userInfo.tempAvatarUrl || (userInfo.avatarUrl && userInfo.avatarUrl.indexOf('cloud://') < 0)
+
 			this.setData({
 				userInfo: userInfo,
 				// 如果有临时头像URL，直接使用，不显示加载状态
-				avatarLoading: !(
-					userInfo.tempAvatarUrl ||
-					(userInfo.avatarUrl && userInfo.avatarUrl.indexOf('cloud://') < 0)
-				),
+				avatarLoading: !hasValidAvatar,
 			})
 
-			// 如果有临时URL直接使用
-			if (userInfo.tempAvatarUrl) {
-				console.log('使用缓存的临时头像URL')
-				this.setData({
-					'userInfo.tempAvatarUrl': userInfo.tempAvatarUrl,
-					avatarLoading: false,
-				})
+			// 有有效的头像URL时，不再进行后台更新
+			if (hasValidAvatar) {
+				console.log('使用缓存的头像URL，跳过后台更新')
+				return
 			}
-			// 如果有非云存储URL，也直接使用
-			else if (userInfo.avatarUrl && userInfo.avatarUrl.indexOf('cloud://') < 0) {
-				console.log('使用非云存储头像URL')
-				this.setData({
-					avatarLoading: false,
-				})
-			}
+
+			// 不符合快速加载条件时，才进行后台静默更新
+			setTimeout(() => {
+				this.silentFetchUserInfo()
+			}, 1000) // 延迟1秒后再尝试更新，避免初始渲染时的状态变化
 		} else {
 			// 无全局缓存，设置空数据
 			this.setData({
 				userInfo: {},
 				avatarLoading: true,
 			})
-		}
 
-		// 后台静默加载最新用户信息
-		this.silentFetchUserInfo()
+			// 无缓存时立即获取用户信息
+			this.fetchUserInfo()
+		}
 	},
 
 	onShow: function () {
-		// 如果没有用户信息或头像，才执行加载
-		if (!this.data.userInfo.avatarUrl && !this.data.userInfo.tempAvatarUrl) {
+		// 只有在完全没有用户信息时才主动获取最新信息
+		if (!this.data.userInfo.nickName && !this.data.userInfo.realName) {
 			this.fetchUserInfo()
-		} else {
-			// 否则静默更新，不影响界面
+		} else if (!this.data.userInfo.avatarUrl && !this.data.userInfo.tempAvatarUrl) {
+			// 只有在没有头像的情况下才更新头像
 			this.silentFetchUserInfo()
 		}
 	},
 
 	// 静默获取用户信息，不改变UI状态
 	silentFetchUserInfo: function () {
+		// 如果正在上传头像，不进行静默更新
+		if (this.data.avatarUploading) {
+			return
+		}
+
 		// 不更改加载状态，后台静默刷新
 		wx.cloud.callFunction({
 			name: 'login',
@@ -79,41 +81,67 @@ Page({
 					.get()
 					.then(res => {
 						if (res.data) {
-							// 更新全局用户信息
+							// 更新全局用户信息（仅保存到全局，不立即更新界面）
 							app.globalData.userInfo = res.data
 							app.globalData.hasLogin = true
 
-							// 如果有头像，获取临时URL
+							// 如果有头像，先比较是否与当前显示的相同
+							if (
+								res.data.avatarUrl &&
+								this.data.userInfo.avatarUrl &&
+								res.data.avatarUrl === this.data.userInfo.avatarUrl
+							) {
+								// 头像URL相同，无需更新
+								return
+							}
+
+							// 如果头像是云存储路径并且与当前不同，获取临时URL但不立即更新界面
 							if (res.data.avatarUrl && res.data.avatarUrl.indexOf('cloud://') === 0) {
+								// 避免正在上传头像时重复获取
+								if (this.data.avatarUploading) {
+									return
+								}
+
 								console.log('静默获取用户头像临时URL')
 								wx.cloud.getTempFileURL({
 									fileList: [res.data.avatarUrl],
 									success: tempRes => {
+										// 如果开始上传了新头像，不继续处理
+										if (this.data.avatarUploading) {
+											return
+										}
+
 										if (
 											tempRes.fileList &&
 											tempRes.fileList[0] &&
 											tempRes.fileList[0].tempFileURL
 										) {
 											console.log('静默获取临时头像URL成功')
-											// 更新到页面和全局
+											// 只更新全局缓存，不更新当前页面显示
 											const tempUrl = tempRes.fileList[0].tempFileURL
-
-											this.setData({
-												userInfo: res.data,
-												'userInfo.tempAvatarUrl': tempUrl,
-											})
 
 											if (app.globalData.userInfo) {
 												app.globalData.userInfo.tempAvatarUrl = tempUrl
 											}
+
+											// 只有当用户没有头像时，才更新界面显示
+											if (!this.data.userInfo.tempAvatarUrl && !this.data.userInfo.avatarUrl) {
+												this.setData({
+													userInfo: res.data,
+													'userInfo.tempAvatarUrl': tempUrl,
+													avatarLoading: false,
+												})
+											}
 										}
 									},
 								})
-							} else {
-								// 普通URL头像
-								this.setData({
-									userInfo: res.data,
-								})
+							} else if (!this.data.userInfo.avatarUrl && !this.data.userInfo.tempAvatarUrl) {
+								// 只有当前没有头像时，才更新普通URL头像
+								if (!this.data.avatarUploading) {
+									this.setData({
+										userInfo: res.data,
+									})
+								}
 							}
 						}
 					})
@@ -126,6 +154,11 @@ Page({
 
 	// 从数据库获取最新用户信息 (带UI加载状态)
 	fetchUserInfo: function () {
+		// 如果正在上传头像，不进行数据库更新
+		if (this.data.avatarUploading) {
+			return
+		}
+
 		// 显示加载状态
 		this.setData({
 			avatarLoading: true,
@@ -234,6 +267,12 @@ Page({
 			title: '保存中',
 		})
 
+		// 设置避免头像闪烁的标记，避免在上传过程中更新头像
+		this.setData({
+			avatarLoading: true,
+			avatarUploading: true,
+		})
+
 		// 获取数据库和当前用户ID
 		const db = wx.cloud.database()
 
@@ -263,7 +302,6 @@ Page({
 								},
 							})
 							.then(res => {
-								wx.hideLoading()
 								console.log('更新头像成功', res)
 
 								// 获取临时访问链接
@@ -283,26 +321,57 @@ Page({
 												app.globalData.userInfo.tempAvatarUrl = tempUrl
 											}
 
-											// 更新当前页面显示
+											// 在获取到临时URL后一次性更新状态
 											this.setData({
-												'userInfo.avatarUrl': cloudFileId,
-												'userInfo.tempAvatarUrl': tempUrl,
+												userInfo: {
+													...this.data.userInfo,
+													avatarUrl: cloudFileId,
+													tempAvatarUrl: tempUrl,
+												},
 												avatarLoading: false,
+												avatarUploading: false,
+											})
+
+											// 隐藏加载提示并显示成功提示
+											wx.hideLoading()
+											wx.showToast({
+												title: '头像更新成功',
+												icon: 'success',
+												duration: 1500,
+											})
+										} else {
+											this.setData({
+												avatarLoading: false,
+												avatarUploading: false,
+											})
+											wx.hideLoading()
+											wx.showToast({
+												title: '头像处理失败',
+												icon: 'none',
 											})
 										}
 									},
-								})
-
-								// 显示成功提示
-								wx.showToast({
-									title: '头像更新成功',
-									icon: 'success',
-									duration: 1500,
+									fail: err => {
+										console.error('获取临时头像URL失败:', err)
+										this.setData({
+											avatarLoading: false,
+											avatarUploading: false,
+										})
+										wx.hideLoading()
+										wx.showToast({
+											title: '头像处理失败',
+											icon: 'none',
+										})
+									},
 								})
 							})
 							.catch(err => {
 								wx.hideLoading()
 								console.error('更新头像失败', err)
+								this.setData({
+									avatarLoading: false,
+									avatarUploading: false,
+								})
 								wx.showToast({
 									title: '保存失败，请重试',
 									icon: 'none',
@@ -312,6 +381,10 @@ Page({
 					fail: err => {
 						wx.hideLoading()
 						console.error('获取用户openid失败', err)
+						this.setData({
+							avatarLoading: false,
+							avatarUploading: false,
+						})
 						wx.showToast({
 							title: '网络错误，请重试',
 							icon: 'none',
@@ -322,6 +395,10 @@ Page({
 			fail: err => {
 				wx.hideLoading()
 				console.error('上传头像到云存储失败', err)
+				this.setData({
+					avatarLoading: false,
+					avatarUploading: false,
+				})
 				wx.showToast({
 					title: '头像上传失败，请重试',
 					icon: 'none',

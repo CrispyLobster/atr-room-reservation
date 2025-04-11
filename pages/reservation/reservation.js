@@ -162,7 +162,7 @@ Page({
 					// 构建预约数据
 					const appointmentData = {
 						userId: openid,
-						roomName: '面试室', // 默认房间名称
+						roomName: 'ATR研讨室', // 默认房间名称
 						date: this.data.date,
 						timeId: parseInt(this.data.timeId),
 						startTime: this.data.startTime,

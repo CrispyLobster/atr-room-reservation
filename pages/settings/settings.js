@@ -33,9 +33,8 @@ Page({
 	// 关于我们
 	showAbout: function () {
 		wx.showModal({
-			title: '关于面试室预约助手',
-			content:
-				'面试室预约助手是一款为实验室同学提供面试教室预约服务的小程序。\n\n版本: 1.0.0\n开发团队: 未来科技',
+			title: '关于ATR研讨室预约助手',
+			content: 'ATR研讨室预约助手是一款为实验室同学提供ATR研讨室预约服务的小程序。\n\n版本: 1.0.0',
 			showCancel: false,
 		})
 	},
@@ -44,7 +43,7 @@ Page({
 	contactUs: function () {
 		wx.showModal({
 			title: '联系我们',
-			content: '如有问题或建议，请联系:\n\n邮箱: contact@example.com\n电话: 123-4567-8901',
+			content: '如有问题或建议，请联系:\n\n邮箱: 36920231153269@.com\n',
 			showCancel: false,
 		})
 	},

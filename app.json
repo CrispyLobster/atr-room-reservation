@@ -12,7 +12,7 @@
 	"window": {
 		"backgroundTextStyle": "light",
 		"navigationBarBackgroundColor": "#3A5FCD",
-		"navigationBarTitleText": "面试室预约助手",
+		"navigationBarTitleText": "ATR研讨室预约助手",
 		"navigationBarTextStyle": "white"
 	},
 	"tabBar": {
