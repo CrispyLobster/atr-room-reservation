@@ -3,7 +3,15 @@
      <view class="user-card">
           <view class="user-info">
                <button class="avatar-wrapper" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
-                    <image wx:if="{{userInfo.avatarUrl}}" src="{{userInfo.avatarUrl}}" mode="aspectFill" class="avatar-image"></image>
+                    <!-- 头像加载中显示加载状态 -->
+                    <view wx:if="{{avatarLoading}}" class="avatar-loading">
+                         <text class="avatar-text">
+                              {{userInfo.realName ? userInfo.realName.substr(0,1) : (userInfo.nickName ? userInfo.nickName.substr(0,1) : '访')}}
+                         </text>
+                    </view>
+                    <!-- 如有临时头像URL或非云存储头像URL，显示图片 -->
+                    <image wx:elif="{{userInfo.tempAvatarUrl || (userInfo.avatarUrl && userInfo.avatarUrl.indexOf('cloud://') < 0)}}" src="{{userInfo.tempAvatarUrl || userInfo.avatarUrl}}" mode="aspectFill" class="avatar-image"></image>
+                    <!-- 无有效头像时显示默认文字头像 -->
                     <text wx:else class="avatar-text">
                          {{userInfo.realName ? userInfo.realName.substr(0,1) : (userInfo.nickName ? userInfo.nickName.substr(0,1) : '访')}}
                     </text>

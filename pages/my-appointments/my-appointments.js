@@ -43,9 +43,40 @@ Page({
 					.get()
 					.then(res => {
 						wx.hideLoading()
-						this.setData({
-							appointments: res.data || [],
+
+						// 检查未完成预约的状态，根据当前时间自动更新状态
+						const appointments = res.data || []
+						const currentDate = new Date()
+						const currentDateStr = this.formatDate(currentDate)
+						const currentTimeStr = this.formatTime(currentDate)
+						let hasUpdates = false
+
+						// 检查每个预约项，更新已过期但仍为pending的状态
+						const updatedAppointments = appointments.map(appointment => {
+							// 只检查状态为pending的预约
+							if (appointment.status === 'pending') {
+								// 如果日期已过，或者日期相同但时间已过
+								if (
+									appointment.date < currentDateStr ||
+									(appointment.date === currentDateStr && appointment.endTime <= currentTimeStr)
+								) {
+									// 标记预约为已完成
+									appointment.status = 'completed'
+									hasUpdates = true
+
+									// 更新数据库记录
+									this.updateAppointmentStatus(appointment._id, 'completed')
+								}
+							}
+							return appointment
 						})
+
+						// 更新页面数据
+						this.setData({
+							appointments: updatedAppointments,
+						})
+
+						console.log('预约状态检查完成，是否有更新：', hasUpdates)
 					})
 					.catch(err => {
 						wx.hideLoading()
@@ -140,5 +171,40 @@ Page({
 					icon: 'none',
 				})
 			})
+	},
+
+	// 更新预约状态到数据库
+	updateAppointmentStatus: function (id, status) {
+		const db = wx.cloud.database()
+
+		db.collection('room_reservation')
+			.doc(id)
+			.update({
+				data: {
+					status: status,
+					updatedAt: db.serverDate(),
+				},
+			})
+			.then(() => {
+				console.log(`预约 ${id} 状态已更新为 ${status}`)
+			})
+			.catch(err => {
+				console.error(`更新预约 ${id} 状态失败:`, err)
+			})
+	},
+
+	// 格式化日期为 yyyy-MM-dd
+	formatDate: function (date) {
+		const year = date.getFullYear()
+		const month = (date.getMonth() + 1).toString().padStart(2, '0')
+		const day = date.getDate().toString().padStart(2, '0')
+		return `${year}-${month}-${day}`
+	},
+
+	// 格式化时间为 HH:mm
+	formatTime: function (date) {
+		const hours = date.getHours().toString().padStart(2, '0')
+		const minutes = date.getMinutes().toString().padStart(2, '0')
+		return `${hours}:${minutes}`
 	},
 })

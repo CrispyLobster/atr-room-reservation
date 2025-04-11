@@ -57,8 +57,30 @@ Page({
 						)}:${this.formatNumber(createTime.getMinutes())}`
 					}
 
+					// 检查预约状态，如果已经过期但状态还是pending，则更新为completed
+					const appointment = res.data
+					if (appointment.status === 'pending') {
+						const currentDate = new Date()
+						const currentDateStr = this.formatDate(currentDate)
+						const currentTimeStr = this.formatTime(currentDate)
+
+						// 检查日期和时间是否已过
+						if (
+							appointment.date < currentDateStr ||
+							(appointment.date === currentDateStr && appointment.endTime <= currentTimeStr)
+						) {
+							// 更新为已完成状态
+							appointment.status = 'completed'
+
+							// 同步更新数据库
+							this.updateAppointmentStatus(appointment._id, 'completed')
+
+							console.log('预约已过期，状态已更新为已完成')
+						}
+					}
+
 					this.setData({
-						appointment: res.data,
+						appointment: appointment,
 						formatCreateTime,
 					})
 				} else {
@@ -79,6 +101,41 @@ Page({
 					icon: 'none',
 				})
 			})
+	},
+
+	// 更新预约状态到数据库
+	updateAppointmentStatus: function (id, status) {
+		const db = wx.cloud.database()
+
+		db.collection('room_reservation')
+			.doc(id)
+			.update({
+				data: {
+					status: status,
+					updatedAt: db.serverDate(),
+				},
+			})
+			.then(() => {
+				console.log(`预约 ${id} 状态已更新为 ${status}`)
+			})
+			.catch(err => {
+				console.error(`更新预约 ${id} 状态失败:`, err)
+			})
+	},
+
+	// 格式化日期为 yyyy-MM-dd
+	formatDate: function (date) {
+		const year = date.getFullYear()
+		const month = (date.getMonth() + 1).toString().padStart(2, '0')
+		const day = date.getDate().toString().padStart(2, '0')
+		return `${year}-${month}-${day}`
+	},
+
+	// 格式化时间为 HH:mm
+	formatTime: function (date) {
+		const hours = date.getHours().toString().padStart(2, '0')
+		const minutes = date.getMinutes().toString().padStart(2, '0')
+		return `${hours}:${minutes}`
 	},
 
 	// 格式化数字

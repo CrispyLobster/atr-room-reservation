@@ -84,24 +84,39 @@ Page({
 					.then(res => {
 						console.log('用户已存在，原数据:', res.data)
 
-						// 每次登录都更新用户的微信昵称和头像
+						// 创建更新数据对象 - 只更新昵称，保留用户自定义头像
+						const updateData = {
+							nickName: userInfo.nickName,
+							updatedAt: db.serverDate(),
+						}
+
+						// 只有当用户没有自定义头像时，才使用微信默认头像
+						// 检查现有头像是否为云存储路径(cloud://)
+						if (
+							!res.data.avatarUrl ||
+							(res.data.avatarUrl && res.data.avatarUrl.indexOf('cloud://') !== 0)
+						) {
+							console.log('用户没有自定义头像，使用微信头像')
+							updateData.avatarUrl = userInfo.avatarUrl
+						} else {
+							console.log('用户已有自定义头像，保留现有头像')
+						}
+
+						// 更新用户信息
 						db.collection('users')
 							.doc(openid)
 							.update({
-								data: {
-									nickName: userInfo.nickName,
-									avatarUrl: userInfo.avatarUrl,
-									updatedAt: db.serverDate(),
-								},
+								data: updateData,
 							})
 							.then(updateRes => {
-								console.log('更新用户微信信息成功', updateRes)
+								console.log('更新用户信息成功', updateRes)
 
-								// 保存到全局数据 - 使用最新的微信昵称和头像
+								// 保存到全局数据 - 使用最新的数据
 								const updatedUserInfo = {
 									...res.data,
 									nickName: userInfo.nickName,
-									avatarUrl: userInfo.avatarUrl,
+									// 保留原有头像或使用新头像
+									avatarUrl: updateData.avatarUrl || res.data.avatarUrl,
 								}
 
 								app.globalData.userInfo = updatedUserInfo
@@ -114,7 +129,7 @@ Page({
 							})
 							.catch(err => {
 								wx.hideLoading()
-								console.error('更新用户微信信息失败', err)
+								console.error('更新用户信息失败', err)
 								wx.showToast({
 									title: '登录异常',
 									icon: 'none',
