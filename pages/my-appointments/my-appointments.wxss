@@ -56,9 +56,14 @@
 	color: #ff8c00;
 }
 
-.status-completed {
+.status-ongoing {
 	background-color: rgba(76, 175, 80, 0.1);
 	color: #4caf50;
+}
+
+.status-completed {
+	background-color: rgba(117, 117, 117, 0.1);
+	color:rgb(77, 77, 77);
 }
 
 .status-canceled {

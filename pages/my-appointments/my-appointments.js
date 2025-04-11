@@ -3,8 +3,10 @@ const app = getApp()
 Page({
 	data: {
 		appointments: [],
+		isRefreshing: false,
 		statusText: {
 			pending: '未开始',
+			ongoing: '进行中',
 			completed: '已完成',
 			canceled: '已取消',
 		},
@@ -20,11 +22,22 @@ Page({
 		this.loadAppointments()
 	},
 
-	// 加载预约列表
-	loadAppointments: function () {
-		wx.showLoading({
-			title: '加载中',
+	// 处理下拉刷新
+	onPullDownRefresh: function () {
+		console.log('触发下拉刷新')
+		this.setData({
+			isRefreshing: true,
 		})
+		this.loadAppointments(true)
+	},
+
+	// 加载预约列表
+	loadAppointments: function (isRefresh = false) {
+		if (!isRefresh) {
+			wx.showLoading({
+				title: '加载中',
+			})
+		}
 
 		// 从云数据库获取预约数据
 		wx.cloud.callFunction({
@@ -42,7 +55,11 @@ Page({
 					.orderBy('startTime', 'desc') // 同一天按开始时间降序排序
 					.get()
 					.then(res => {
-						wx.hideLoading()
+						if (!isRefresh) {
+							wx.hideLoading()
+						} else {
+							wx.stopPullDownRefresh() // 停止下拉刷新动画
+						}
 
 						// 检查未完成预约的状态，根据当前时间自动更新状态
 						const appointments = res.data || []
@@ -51,21 +68,46 @@ Page({
 						const currentTimeStr = this.formatTime(currentDate)
 						let hasUpdates = false
 
-						// 检查每个预约项，更新已过期但仍为pending的状态
+						// 检查每个预约项，更新状态
 						const updatedAppointments = appointments.map(appointment => {
-							// 只检查状态为pending的预约
-							if (appointment.status === 'pending') {
-								// 如果日期已过，或者日期相同但时间已过
+							// 只处理未取消的预约
+							if (appointment.status !== 'canceled') {
+								// 如果是已过期的预约
 								if (
 									appointment.date < currentDateStr ||
-									(appointment.date === currentDateStr && appointment.endTime <= currentTimeStr)
+									(appointment.date === currentDateStr && appointment.endTime < currentTimeStr)
 								) {
-									// 标记预约为已完成
-									appointment.status = 'completed'
-									hasUpdates = true
-
-									// 更新数据库记录
-									this.updateAppointmentStatus(appointment._id, 'completed')
+									// 如果不是已完成状态，更新为已完成
+									if (appointment.status !== 'completed') {
+										appointment.status = 'completed'
+										hasUpdates = true
+										this.updateAppointmentStatus(appointment._id, 'completed')
+									}
+								}
+								// 如果是当前正在进行的预约
+								else if (
+									appointment.date === currentDateStr &&
+									appointment.startTime <= currentTimeStr &&
+									appointment.endTime > currentTimeStr
+								) {
+									// 更新为进行中状态
+									if (appointment.status !== 'ongoing') {
+										appointment.status = 'ongoing'
+										hasUpdates = true
+										this.updateAppointmentStatus(appointment._id, 'ongoing')
+									}
+								}
+								// 如果是未来的预约
+								else if (
+									appointment.date > currentDateStr ||
+									(appointment.date === currentDateStr && appointment.startTime > currentTimeStr)
+								) {
+									// 确保是pending状态
+									if (appointment.status !== 'pending') {
+										appointment.status = 'pending'
+										hasUpdates = true
+										this.updateAppointmentStatus(appointment._id, 'pending')
+									}
 								}
 							}
 							return appointment
@@ -74,12 +116,22 @@ Page({
 						// 更新页面数据
 						this.setData({
 							appointments: updatedAppointments,
+							isRefreshing: false,
 						})
 
 						console.log('预约状态检查完成，是否有更新：', hasUpdates)
 					})
 					.catch(err => {
-						wx.hideLoading()
+						if (!isRefresh) {
+							wx.hideLoading()
+						} else {
+							wx.stopPullDownRefresh() // 停止下拉刷新动画
+						}
+
+						this.setData({
+							isRefreshing: false,
+						})
+
 						console.error('获取预约列表失败', err)
 						wx.showToast({
 							title: '加载失败',
@@ -88,7 +140,16 @@ Page({
 					})
 			},
 			fail: err => {
-				wx.hideLoading()
+				if (!isRefresh) {
+					wx.hideLoading()
+				} else {
+					wx.stopPullDownRefresh() // 停止下拉刷新动画
+				}
+
+				this.setData({
+					isRefreshing: false,
+				})
+
 				console.error('调用云函数失败', err)
 			},
 		})
