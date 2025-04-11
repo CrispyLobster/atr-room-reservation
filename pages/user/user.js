@@ -512,9 +512,28 @@ Page({
 			content: '确定要退出登录吗？',
 			success: res => {
 				if (res.confirm) {
+					// 保存当前用户头像URL，以便重新登录时使用
+					const currentAvatarUrl = app.globalData.userInfo
+						? app.globalData.userInfo.avatarUrl
+						: null
+					const currentTempAvatarUrl = app.globalData.userInfo
+						? app.globalData.userInfo.tempAvatarUrl
+						: null
+
 					// 清除用户登录状态
 					app.globalData.userInfo = null
 					app.globalData.hasLogin = false
+
+					// 清除本地存储中的登录状态，但保留头像信息
+					if (currentAvatarUrl || currentTempAvatarUrl) {
+						wx.setStorageSync('avatarCache', {
+							avatarUrl: currentAvatarUrl,
+							tempAvatarUrl: currentTempAvatarUrl,
+						})
+					}
+
+					// 清除用户登录信息
+					wx.removeStorageSync('userInfo')
 
 					// 跳转到登录页
 					wx.reLaunch({

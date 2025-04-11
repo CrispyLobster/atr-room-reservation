@@ -22,7 +22,21 @@ App({
 			})
 		}
 
-		// 获取用户登录信息
+		// 获取本地存储中的用户信息
+		const storedUserInfo = wx.getStorageSync('userInfo')
+		if (storedUserInfo) {
+			console.log('从本地存储恢复用户信息')
+
+			// 只有当用户信息完整时才设置登录状态为true
+			const isComplete = storedUserInfo.realName && storedUserInfo.studentId && storedUserInfo.phone
+
+			this.globalData.userInfo = storedUserInfo
+			this.globalData.hasLogin = isComplete // 只有个人信息完整才视为已登录
+
+			console.log('用户登录状态:', isComplete ? '已登录' : '未完成注册')
+		}
+
+		// 获取最新用户信息
 		this.fetchUserInfo()
 	},
 
@@ -45,9 +59,21 @@ App({
 						.then(res => {
 							if (res.data) {
 								console.log('获取到用户信息:', res.data)
+
+								// 从本地存储中获取之前的临时URL
+								const currentUserInfo = this.globalData.userInfo || {}
+								const previousTempUrl = currentUserInfo.tempAvatarUrl
+
 								// 存储用户信息到全局变量
-								this.globalData.userInfo = res.data
+								this.globalData.userInfo = {
+									...res.data,
+									// 保留之前的临时URL，如果存在的话
+									tempAvatarUrl: previousTempUrl,
+								}
 								this.globalData.hasLogin = true
+
+								// 将用户信息保存到本地存储
+								wx.setStorageSync('userInfo', this.globalData.userInfo)
 
 								// 如果有头像，获取临时路径
 								if (res.data.avatarUrl) {
@@ -63,7 +89,13 @@ App({
 													tempRes.fileList[0].tempFileURL
 												) {
 													console.log('获取临时头像URL成功:', tempRes.fileList[0].tempFileURL)
+
+													// 更新到全局数据
 													this.globalData.userInfo.tempAvatarUrl = tempRes.fileList[0].tempFileURL
+
+													// 保存更新后的用户信息到本地存储
+													wx.setStorageSync('userInfo', this.globalData.userInfo)
+
 													// 刷新全局数据完成后解析Promise
 													resolve(this.globalData.userInfo)
 												} else {

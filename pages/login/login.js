@@ -9,7 +9,9 @@ Page({
 		console.log('登录页面加载')
 		// 检查用户是否已经登录
 		if (app.globalData.hasLogin) {
-			this.checkUserProfile()
+			console.log('用户已登录，跳转到首页')
+			// 已登录，直接跳转到首页，不再检查个人信息
+			this.navigateToIndex()
 		}
 	},
 
@@ -57,6 +59,9 @@ Page({
 			title: '登录中',
 		})
 
+		// 获取之前缓存的头像信息
+		const avatarCache = wx.getStorageSync('avatarCache') || {}
+
 		// 调用云函数获取openid
 		wx.cloud.callFunction({
 			name: 'login',
@@ -90,16 +95,20 @@ Page({
 							updatedAt: db.serverDate(),
 						}
 
-						// 只有当用户没有自定义头像时，才使用微信默认头像
-						// 检查现有头像是否为云存储路径(cloud://)
-						if (
-							!res.data.avatarUrl ||
-							(res.data.avatarUrl && res.data.avatarUrl.indexOf('cloud://') !== 0)
-						) {
-							console.log('用户没有自定义头像，使用微信头像')
+						// 优先使用数据库中的云存储头像
+						if (res.data.avatarUrl && res.data.avatarUrl.indexOf('cloud://') === 0) {
+							console.log('使用数据库中现有的云存储头像')
+							// 不更新头像，保留原有云存储头像
+						}
+						// 其次使用缓存的云存储头像
+						else if (avatarCache.avatarUrl && avatarCache.avatarUrl.indexOf('cloud://') === 0) {
+							console.log('使用缓存的云存储头像')
+							updateData.avatarUrl = avatarCache.avatarUrl
+						}
+						// 最后使用微信默认头像
+						else {
+							console.log('使用微信默认头像')
 							updateData.avatarUrl = userInfo.avatarUrl
-						} else {
-							console.log('用户已有自定义头像，保留现有头像')
 						}
 
 						// 更新用户信息
@@ -119,10 +128,21 @@ Page({
 									avatarUrl: updateData.avatarUrl || res.data.avatarUrl,
 								}
 
+								// 如果有缓存的临时头像URL，也添加到用户信息中
+								if (avatarCache.tempAvatarUrl) {
+									updatedUserInfo.tempAvatarUrl = avatarCache.tempAvatarUrl
+								}
+
 								app.globalData.userInfo = updatedUserInfo
 								app.globalData.hasLogin = true
 
+								// 保存更新后的用户信息到本地存储
+								wx.setStorageSync('userInfo', updatedUserInfo)
+
 								wx.hideLoading()
+
+								// 登录成功后清除头像缓存
+								wx.removeStorageSync('avatarCache')
 
 								// 检查个人资料完善情况
 								this.checkUserProfile(updatedUserInfo)
@@ -138,7 +158,15 @@ Page({
 					})
 					.catch(err => {
 						console.log('用户不存在，创建新用户', err)
-						console.log('将创建新用户，昵称:', userInfo.nickName, '头像:', userInfo.avatarUrl)
+
+						// 确定使用哪个头像URL
+						let avatarToUse = userInfo.avatarUrl
+
+						// 优先使用缓存的云存储头像
+						if (avatarCache.avatarUrl && avatarCache.avatarUrl.indexOf('cloud://') === 0) {
+							console.log('新用户使用缓存的云存储头像')
+							avatarToUse = avatarCache.avatarUrl
+						}
 
 						// 创建新用户
 						db.collection('users')
@@ -146,7 +174,7 @@ Page({
 								data: {
 									_id: openid,
 									nickName: userInfo.nickName,
-									avatarUrl: userInfo.avatarUrl,
+									avatarUrl: avatarToUse,
 									realName: '',
 									studentId: '',
 									phone: '',
@@ -162,11 +190,16 @@ Page({
 								const newUserInfo = {
 									_id: openid,
 									nickName: userInfo.nickName,
-									avatarUrl: userInfo.avatarUrl,
+									avatarUrl: avatarToUse,
 									realName: '',
 									studentId: '',
 									phone: '',
 									isAdmin: false,
+								}
+
+								// 如果有缓存的临时头像URL，也添加到用户信息中
+								if (avatarCache.tempAvatarUrl) {
+									newUserInfo.tempAvatarUrl = avatarCache.tempAvatarUrl
 								}
 
 								// 确认全局变量包含昵称和头像
@@ -174,6 +207,12 @@ Page({
 
 								app.globalData.userInfo = newUserInfo
 								app.globalData.hasLogin = true
+
+								// 保存到本地存储
+								wx.setStorageSync('userInfo', newUserInfo)
+
+								// 登录成功后清除头像缓存
+								wx.removeStorageSync('avatarCache')
 
 								wx.showToast({
 									title: '登录成功',
@@ -211,12 +250,9 @@ Page({
 
 	// 检查用户是否已完善个人资料
 	checkUserProfile: function (userData) {
-		if (!userData || !userData.realName || !userData.studentId || !userData.phone) {
-			// 未完善个人资料，跳转到个人信息页面
-			wx.redirectTo({
-				url: '/pages/userinfo/userinfo',
-			})
-		} else {
+		// 如果在数据库中有姓名、学号和电话，则认为用户已完善个人资料
+		if (userData && userData.realName && userData.studentId && userData.phone) {
+			console.log('用户已完善个人资料，直接跳转到首页')
 			// 显示成功提示
 			wx.showToast({
 				title: '登录成功',
@@ -227,6 +263,14 @@ Page({
 			// 已完善个人资料，跳转到首页
 			setTimeout(() => {
 				this.navigateToIndex()
+			}, 1000)
+		} else {
+			console.log('用户未完善个人资料，跳转到个人信息页面')
+			// 未完善个人资料，跳转到个人信息页面
+			setTimeout(() => {
+				wx.redirectTo({
+					url: '/pages/userinfo/userinfo',
+				})
 			}, 1000)
 		}
 	},
