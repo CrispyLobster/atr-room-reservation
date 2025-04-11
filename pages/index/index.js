@@ -204,11 +204,29 @@ Page({
 				console.log('云函数查询预约结果:', res.result)
 				const appointments = res.result.data || []
 
+				// 获取预约时间段ID和预约人姓名的映射
 				const bookedTimeIds = appointments.map(item => item.timeId)
 				console.log('已预约的时间段IDs:', bookedTimeIds)
 
+				// 创建时间段ID到预约人姓名的映射
+				const bookedInfoMap = {}
+				appointments.forEach(item => {
+					bookedInfoMap[item.timeId] = {
+						name: item.name || '未知预约人',
+						id: item._id,
+					}
+				})
+
 				// 生成可用时间段
 				const timeSlots = generateTimeSlots(date, bookedTimeIds)
+
+				// 为已预约的时间段添加预约人信息
+				timeSlots.forEach(slot => {
+					if (slot.isBooked && bookedInfoMap[slot.id]) {
+						slot.bookedBy = bookedInfoMap[slot.id].name
+						slot.appointmentId = bookedInfoMap[slot.id].id
+					}
+				})
 
 				this.setData({
 					timeSlots: timeSlots,

@@ -143,9 +143,23 @@
 	margin-bottom: 8rpx;
 }
 
+.status-container {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
 .time-status {
 	font-size: 12px;
 	color: #999999;
+}
+
+.booked-by {
+	font-size: 12px;
+	color: #3a5fcd;
+	margin-left: 8rpx;
+	font-weight: 500;
 }
 
 .time-slot-booked .time-range,

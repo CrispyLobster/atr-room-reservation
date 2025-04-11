@@ -24,9 +24,15 @@
                <view wx:for="{{timeSlots}}" wx:key="id" class="time-slot {{item.isBooked ? (item.isPast ? 'time-slot-past' : 'time-slot-booked') : 'time-slot-available'}}">
                     <view class="time-info">
                          <text class="time-range">{{item.startTime}} - {{item.endTime}}</text>
-                         <text class="time-status">
-                              {{item.isPast ? '时间已过' : (item.isBooked ? '已被预约' : '可预约')}}
-                         </text>
+                         <view class="status-container">
+                              <text class="time-status">
+                                   {{item.isPast ? '时间已过' : (item.isBooked ? '已被预约' : '可预约')}}
+                              </text>
+                              <!-- 只在已被预约且未过期的时间段显示预约人 -->
+                              <text wx:if="{{item.isBooked && !item.isPast && item.bookedBy}}" class="booked-by">
+                                   (预约人: {{item.bookedBy}})
+                              </text>
+                         </view>
                     </view>
                     <block wx:if="{{!item.isBooked}}">
                          <button class="btn-book" bindtap="goToReservation" data-time-id="{{item.id}}">

@@ -4,6 +4,7 @@ Page({
 	data: {
 		userInfo: {},
 		appointments: [],
+		avatarLoading: true,
 		statusText: {
 			pending: '未开始',
 			completed: '已完成',
@@ -12,24 +13,124 @@ Page({
 	},
 
 	onLoad: function (options) {
-		// 获取用户信息
-		this.setData({
-			userInfo: app.globalData.userInfo || {},
-		})
+		// 检查是否已经有全局缓存的用户信息和头像
+		if (app.globalData.userInfo) {
+			// 优先使用已缓存的信息，避免加载闪烁
+			const userInfo = app.globalData.userInfo
+
+			this.setData({
+				userInfo: userInfo,
+				// 如果有临时头像URL，直接使用，不显示加载状态
+				avatarLoading: !(
+					userInfo.tempAvatarUrl ||
+					(userInfo.avatarUrl && userInfo.avatarUrl.indexOf('cloud://') < 0)
+				),
+			})
+
+			// 如果有临时URL直接使用
+			if (userInfo.tempAvatarUrl) {
+				console.log('使用缓存的临时头像URL')
+				this.setData({
+					'userInfo.tempAvatarUrl': userInfo.tempAvatarUrl,
+					avatarLoading: false,
+				})
+			}
+			// 如果有非云存储URL，也直接使用
+			else if (userInfo.avatarUrl && userInfo.avatarUrl.indexOf('cloud://') < 0) {
+				console.log('使用非云存储头像URL')
+				this.setData({
+					avatarLoading: false,
+				})
+			}
+		} else {
+			// 无全局缓存，设置空数据
+			this.setData({
+				userInfo: {},
+				avatarLoading: true,
+			})
+		}
+
+		// 后台静默加载最新用户信息
+		this.silentFetchUserInfo()
 	},
 
 	onShow: function () {
-		// 每次显示页面时从云数据库获取最新用户信息
-		this.fetchUserInfo()
+		// 如果没有用户信息或头像，才执行加载
+		if (!this.data.userInfo.avatarUrl && !this.data.userInfo.tempAvatarUrl) {
+			this.fetchUserInfo()
+		} else {
+			// 否则静默更新，不影响界面
+			this.silentFetchUserInfo()
+		}
 	},
 
-	// 从数据库获取最新用户信息
+	// 静默获取用户信息，不改变UI状态
+	silentFetchUserInfo: function () {
+		// 不更改加载状态，后台静默刷新
+		wx.cloud.callFunction({
+			name: 'login',
+			success: res => {
+				const openid = res.result.openid
+				const db = wx.cloud.database()
+
+				// 查询用户信息
+				db.collection('users')
+					.doc(openid)
+					.get()
+					.then(res => {
+						if (res.data) {
+							// 更新全局用户信息
+							app.globalData.userInfo = res.data
+							app.globalData.hasLogin = true
+
+							// 如果有头像，获取临时URL
+							if (res.data.avatarUrl && res.data.avatarUrl.indexOf('cloud://') === 0) {
+								console.log('静默获取用户头像临时URL')
+								wx.cloud.getTempFileURL({
+									fileList: [res.data.avatarUrl],
+									success: tempRes => {
+										if (
+											tempRes.fileList &&
+											tempRes.fileList[0] &&
+											tempRes.fileList[0].tempFileURL
+										) {
+											console.log('静默获取临时头像URL成功')
+											// 更新到页面和全局
+											const tempUrl = tempRes.fileList[0].tempFileURL
+
+											this.setData({
+												userInfo: res.data,
+												'userInfo.tempAvatarUrl': tempUrl,
+											})
+
+											if (app.globalData.userInfo) {
+												app.globalData.userInfo.tempAvatarUrl = tempUrl
+											}
+										}
+									},
+								})
+							} else {
+								// 普通URL头像
+								this.setData({
+									userInfo: res.data,
+								})
+							}
+						}
+					})
+					.catch(err => {
+						console.error('静默获取用户信息失败', err)
+					})
+			},
+		})
+	},
+
+	// 从数据库获取最新用户信息 (带UI加载状态)
 	fetchUserInfo: function () {
-		wx.showLoading({
-			title: '加载中',
+		// 显示加载状态
+		this.setData({
+			avatarLoading: true,
 		})
 
-		// 通过云函数获取用户openid
 		wx.cloud.callFunction({
 			name: 'login',
 			success: res => {
@@ -41,29 +142,84 @@ Page({
 					.doc(openid)
 					.get()
 					.then(res => {
-						wx.hideLoading()
 						if (res.data) {
 							// 更新全局用户信息
 							app.globalData.userInfo = res.data
 							app.globalData.hasLogin = true
 
-							// 更新页面数据
+							// 先更新用户基本信息
 							this.setData({
 								userInfo: res.data,
 							})
+
+							// 如果已经有临时头像URL，直接使用
+							if (res.data.tempAvatarUrl) {
+								this.setData({
+									'userInfo.tempAvatarUrl': res.data.tempAvatarUrl,
+									avatarLoading: false,
+								})
+								return
+							}
+
+							// 如果头像是云存储路径，获取临时URL
+							if (res.data.avatarUrl && res.data.avatarUrl.indexOf('cloud://') === 0) {
+								console.log('正在获取用户头像临时URL')
+								wx.cloud.getTempFileURL({
+									fileList: [res.data.avatarUrl],
+									success: tempRes => {
+										if (
+											tempRes.fileList &&
+											tempRes.fileList[0] &&
+											tempRes.fileList[0].tempFileURL
+										) {
+											console.log('获取到临时头像URL:', tempRes.fileList[0].tempFileURL)
+											// 更新到页面
+											this.setData({
+												'userInfo.tempAvatarUrl': tempRes.fileList[0].tempFileURL,
+												avatarLoading: false,
+											})
+
+											// 同时更新到全局，方便下次使用
+											if (app.globalData.userInfo) {
+												app.globalData.userInfo.tempAvatarUrl = tempRes.fileList[0].tempFileURL
+											}
+										} else {
+											this.setData({
+												avatarLoading: false,
+											})
+										}
+									},
+									fail: err => {
+										console.error('获取临时头像URL失败:', err)
+										this.setData({
+											avatarLoading: false,
+										})
+									},
+								})
+							} else {
+								// 如果是普通URL头像，直接标记加载完成
+								this.setData({
+									avatarLoading: false,
+								})
+							}
 						} else {
-							wx.hideLoading()
-							console.log('未找到用户信息')
+							this.setData({
+								avatarLoading: false,
+							})
 						}
 					})
 					.catch(err => {
-						wx.hideLoading()
 						console.error('获取用户信息失败', err)
+						this.setData({
+							avatarLoading: false,
+						})
 					})
 			},
 			fail: err => {
-				wx.hideLoading()
 				console.error('云函数调用失败', err)
+				this.setData({
+					avatarLoading: false,
+				})
 			},
 		})
 	},
@@ -81,55 +237,93 @@ Page({
 		// 获取数据库和当前用户ID
 		const db = wx.cloud.database()
 
-		wx.cloud.callFunction({
-			name: 'login',
-			success: res => {
-				const openid = res.result.openid
+		// 先将临时文件上传到云存储
+		const cloudPath = `avatar/${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`
 
-				// 更新头像到数据库
-				db.collection('users')
-					.doc(openid)
-					.update({
-						data: {
-							avatarUrl: avatarUrl,
-							updatedAt: db.serverDate(),
-						},
-					})
-					.then(res => {
+		wx.cloud.uploadFile({
+			cloudPath: cloudPath,
+			filePath: avatarUrl,
+			success: uploadRes => {
+				// 获取云存储文件ID
+				const cloudFileId = uploadRes.fileID
+
+				// 调用登录云函数获取用户openid
+				wx.cloud.callFunction({
+					name: 'login',
+					success: res => {
+						const openid = res.result.openid
+
+						// 更新头像到数据库（存储云文件ID）
+						db.collection('users')
+							.doc(openid)
+							.update({
+								data: {
+									avatarUrl: cloudFileId,
+									updatedAt: db.serverDate(),
+								},
+							})
+							.then(res => {
+								wx.hideLoading()
+								console.log('更新头像成功', res)
+
+								// 获取临时访问链接
+								wx.cloud.getTempFileURL({
+									fileList: [cloudFileId],
+									success: tempRes => {
+										if (
+											tempRes.fileList &&
+											tempRes.fileList[0] &&
+											tempRes.fileList[0].tempFileURL
+										) {
+											const tempUrl = tempRes.fileList[0].tempFileURL
+
+											// 更新全局用户信息
+											if (app.globalData.userInfo) {
+												app.globalData.userInfo.avatarUrl = cloudFileId
+												app.globalData.userInfo.tempAvatarUrl = tempUrl
+											}
+
+											// 更新当前页面显示
+											this.setData({
+												'userInfo.avatarUrl': cloudFileId,
+												'userInfo.tempAvatarUrl': tempUrl,
+												avatarLoading: false,
+											})
+										}
+									},
+								})
+
+								// 显示成功提示
+								wx.showToast({
+									title: '头像更新成功',
+									icon: 'success',
+									duration: 1500,
+								})
+							})
+							.catch(err => {
+								wx.hideLoading()
+								console.error('更新头像失败', err)
+								wx.showToast({
+									title: '保存失败，请重试',
+									icon: 'none',
+								})
+							})
+					},
+					fail: err => {
 						wx.hideLoading()
-						console.log('更新头像成功', res)
-
-						// 更新全局用户信息
-						if (app.globalData.userInfo) {
-							app.globalData.userInfo.avatarUrl = avatarUrl
-						}
-
-						// 更新当前页面显示
-						this.setData({
-							'userInfo.avatarUrl': avatarUrl,
-						})
-
-						// 显示成功提示
+						console.error('获取用户openid失败', err)
 						wx.showToast({
-							title: '头像更新成功',
-							icon: 'success',
-							duration: 1500,
-						})
-					})
-					.catch(err => {
-						wx.hideLoading()
-						console.error('更新头像失败', err)
-						wx.showToast({
-							title: '保存失败，请重试',
+							title: '网络错误，请重试',
 							icon: 'none',
 						})
-					})
+					},
+				})
 			},
 			fail: err => {
 				wx.hideLoading()
-				console.error('获取用户openid失败', err)
+				console.error('上传头像到云存储失败', err)
 				wx.showToast({
-					title: '网络错误，请重试',
+					title: '头像上传失败，请重试',
 					icon: 'none',
 				})
 			},

@@ -34,10 +34,23 @@ exports.main = async (event, context) => {
 
 		console.log('查询预约结果:', result)
 
+		// 返回预约数据，包含预约人姓名
+		const appointmentData = result.data.map(item => {
+			return {
+				timeId: item.timeId,
+				date: item.date,
+				startTime: item.startTime,
+				endTime: item.endTime,
+				name: item.name, // 预约人姓名
+				status: item.status,
+				_id: item._id,
+			}
+		})
+
 		return {
 			code: 0,
 			msg: '查询成功',
-			data: result.data,
+			data: appointmentData,
 		}
 	} catch (error) {
 		console.error('查询预约失败:', error)
