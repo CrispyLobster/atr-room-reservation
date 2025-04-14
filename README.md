@@ -1,6 +1,10 @@
 # ATR 研讨室预约助手
 
 本项目开发全程深度借助 AI 工具 Cursor（claude-3.7-sonnet）。项目设计、代码编写、bug 修复等工作 100% 通过对话的形式由 ai 大模型完成。
+项目演示视频链接：
+通过网盘分享的文件：BookATR演示视频.mp4
+链接: https://pan.baidu.com/s/1vezHyKpjB7IcR5ylic9b2w?pwd=1234 提取码: 1234 
+--来自百度网盘超级会员v5的分享
 
 ## 项目简介
 
